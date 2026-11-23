@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useFx } from '@/store/fx'
+import { useCapture } from '@/store/capture'
 import { useScene } from '@/store/scene'
 import { useUi } from '@/store/ui'
 import { vi } from '@/i18n/vi'
@@ -13,6 +14,7 @@ export function CoachMarks() {
   const setCoach = useUi((s) => s.setCoach)
   const strokes = useScene((s) => s.strokes.length + s.items.length)
   const lastMeme = useFx((s) => s.lastMeme)
+  const captured = useCapture((s) => s.phase === 'review')
   const baseline = useRef({ strokes, lastMeme })
 
   useEffect(() => {
@@ -22,6 +24,10 @@ export function CoachMarks() {
     if (step === 1 && lastMeme && lastMeme !== baseline.current.lastMeme)
       setCoach(2)
   }, [step, lastMeme, setCoach])
+
+  useEffect(() => {
+    if (step === 2 && captured) setCoach(-1)
+  }, [step, captured, setCoach])
 
   if (step < 0) return null
   const s = vi.coach.steps[step]!

@@ -1117,3 +1117,167 @@ dd {
     transform: translateX(-50%);
   }
 }
+
+/* ---------- phase 5: capture ---------- */
+.dock-layout {
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  min-width: 96px;
+  padding: 6px 12px;
+  border: 2px dashed var(--mb-line);
+  border-radius: 18px;
+  background: var(--mb-surface);
+  color: var(--mb-text);
+  text-align: left;
+}
+.dock-layout small {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--mb-muted);
+}
+.dock-layout b {
+  font-size: 0.85rem;
+}
+.dock-btn kbd {
+  font-size: 0.6rem;
+}
+.dock-btn.danger {
+  background: #ff3b30;
+  color: #fff;
+}
+.dock-status {
+  align-self: center;
+  padding: 0 12px;
+  font-weight: 800;
+}
+.countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: min(38vh, 300px);
+  font-weight: 900;
+  color: #fff;
+  -webkit-text-stroke: 6px var(--mb-line);
+  paint-order: stroke fill;
+  text-shadow: 0 8px 0 var(--mb-line);
+  animation: count-pop 1s ease-out;
+}
+@keyframes count-pop {
+  from {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    opacity: 0.85;
+  }
+}
+.rec-badge {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  background: rgba(20, 10, 20, 0.75);
+  color: #fff;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.rec-badge i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff3b30;
+  animation: rec-blink 1s steps(2) infinite;
+}
+@keyframes rec-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+.review {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: #1c142499;
+}
+.review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(900px, 100%);
+  max-height: 100%;
+  padding: 16px 18px;
+  border: 2px solid var(--mb-line);
+  border-radius: 20px;
+  background: var(--mb-surface);
+  box-shadow: 5px 6px var(--mb-line);
+  overflow: hidden;
+}
+.review-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.review-card h2 {
+  margin: 0;
+  font-weight: 900;
+}
+.review-body {
+  display: flex;
+  gap: 12px;
+  min-height: 0;
+  flex: 1;
+}
+.review-img {
+  flex: 1;
+  min-width: 0;
+  max-height: 58vh;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #0001;
+}
+.review-clips {
+  width: 170px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+.review-clips video {
+  width: 100%;
+  border-radius: 8px;
+}
+.review-clips h3 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .review-body {
+    flex-direction: column;
+  }
+  .review-clips {
+    width: auto;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .dock-layout {
+    min-width: 70px;
+  }
+}

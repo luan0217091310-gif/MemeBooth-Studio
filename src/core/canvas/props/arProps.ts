@@ -23,9 +23,13 @@ function propImage(def: PropDef): HTMLImageElement | null {
 }
 
 interface Pose {
-  /** Pixel-space anchor points (already smoothed) in target canvas pixels. */
+  /**
+   * Smoothed anchor points in display space, so the same pose renders at any
+   * output resolution (preview, photo, video).
+   */
   anchors: Record<PropAnchor, Vec2>
   angle: number
+  /** Eye distance in stage-width units. */
   eyeDist: number
   squash: number
   lastSeen: number
@@ -83,24 +87,28 @@ export class ArProps {
       const dy = cy - eyes.y
       const shift = (p: Vec2): Vec2 => ({ x: p.x + dx, y: p.y + dy })
       const yaw = yawFromMatrix(face.transform)
+      const norm = (p: Vec2): Vec2 => ({
+        x: (p.x - space.ox) / space.sx,
+        y: (p.y - space.oy) / space.sy,
+      })
       fp.pose = {
         anchors: {
-          eyes: { x: cx, y: cy },
-          cheeks: { x: cx, y: cy },
-          forehead: shift(px(lm[10]!)),
-          nose: shift(px(lm[1]!)),
-          chin: shift(px(lm[152]!)),
-          mouth: shift(mid(px(lm[61]!), px(lm[291]!))),
+          eyes: norm({ x: cx, y: cy }),
+          cheeks: norm({ x: cx, y: cy }),
+          forehead: norm(shift(px(lm[10]!))),
+          nose: norm(shift(px(lm[1]!))),
+          chin: norm(shift(px(lm[152]!))),
+          mouth: norm(shift(mid(px(lm[61]!), px(lm[291]!)))),
         },
         angle,
-        eyeDist: dist,
+        eyeDist: dist / space.unit,
         squash: Math.max(0.45, Math.cos(yaw)),
         lastSeen: now,
       }
     })
   }
 
-  draw(ctx: CanvasRenderingContext2D, now: number): void {
+  draw(ctx: CanvasRenderingContext2D, space: StrokeSpace, now: number): void {
     if (!this.active.length) return
     for (const fp of this.faces) {
       const pose = fp.pose
@@ -115,19 +123,23 @@ export class ArProps {
         fp.fs.reset()
         continue
       }
+      const eye = pose.eyeDist * space.unit
       for (const id of this.active) {
         const def = propDefs.find((p) => p.id === id)
         if (!def) continue
         const img = propImage(def)
         if (!img) continue
-        const w =
-          pose.eyeDist * def.scaleFactor * (def.yawSquash ? pose.squash : 1)
-        const h = pose.eyeDist * def.scaleFactor * def.aspect
-        const anchor = pose.anchors[def.anchor]
+        const w = eye * def.scaleFactor * (def.yawSquash ? pose.squash : 1)
+        const h = eye * def.scaleFactor * def.aspect
+        const na = pose.anchors[def.anchor]
+        const anchor = {
+          x: na.x * space.sx + space.ox,
+          y: na.y * space.sy + space.oy,
+        }
         const c = Math.cos(pose.angle)
         const s = Math.sin(pose.angle)
-        const ox = def.offset.x * pose.eyeDist
-        const oy = def.offset.y * pose.eyeDist
+        const ox = def.offset.x * eye
+        const oy = def.offset.y * eye
         ctx.save()
         ctx.globalAlpha = alpha
         ctx.translate(anchor.x + ox * c - oy * s, anchor.y + ox * s + oy * c)

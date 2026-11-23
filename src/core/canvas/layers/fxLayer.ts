@@ -45,7 +45,7 @@ export class FxLayer {
     this.dirty = active
     if (!active) return
     const space = spaceFor(view, dpr)
-    props.draw(ctx, now)
+    props.draw(ctx, space, now)
     fx.draw(ctx, space, this.canvas.width, this.canvas.height, now)
     if (this.showTestLabel) this.testLabel(ctx, view, dpr, snapshot, label)
   }

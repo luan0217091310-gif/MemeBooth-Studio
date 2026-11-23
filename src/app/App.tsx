@@ -15,6 +15,13 @@ import { VibeChip } from '@/components/controls/VibePicker'
 import { CameraStage } from '@/components/stage/CameraStage'
 import { CoachMarks, StageHints } from '@/components/stage/CoachMarks'
 import { GesturePills } from '@/components/stage/GesturePills'
+import {
+  CaptureReview,
+  CountdownOverlay,
+  RecordingBadge,
+} from '@/components/stage/CaptureOverlays'
+import { getStageEngine } from '@/components/stage/CameraStage'
+import { useCapture } from '@/store/capture'
 import { artwork } from '@/config/assets'
 import { unlockAudio } from '@/core/audio/engine'
 import { useScene } from '@/store/scene'
@@ -61,6 +68,15 @@ export function App() {
   useEffect(() => {
     const handle = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        const phase = useCapture.getState().phase
+        if (phase === 'photo' || phase === 'recording') {
+          getStageEngine()?.capture.cancel()
+          return
+        }
+        if (phase === 'review' || phase === 'videoReview') {
+          getStageEngine()?.capture.closeReview()
+          return
+        }
         if (useSession.getState().debug) setDebug(false)
         else if (useUi.getState().drawer) useUi.getState().setDrawer(null)
         return
@@ -79,6 +95,26 @@ export function App() {
         return
       }
       if (mod || event.altKey || event.repeat) return
+      const cap = getStageEngine()?.capture
+      // Space on a focused button must still press that button.
+      const onButton =
+        event.target instanceof HTMLElement && !!event.target.closest('button')
+      if (
+        event.key === ' ' &&
+        cap &&
+        !onButton &&
+        useSession.getState().started
+      ) {
+        event.preventDefault()
+        if (useCapture.getState().phase === 'idle') void cap.startPhoto()
+        return
+      }
+      if (key === 'r' && cap) {
+        const phase = useCapture.getState().phase
+        if (phase === 'recording') void cap.stopVideo()
+        else if (phase === 'idle') cap.startVideo()
+        return
+      }
       if (key === 'm') {
         const scene = useScene.getState()
         scene.setMode(scene.mode === 'draw' ? 'meme' : 'draw')
@@ -171,6 +207,9 @@ export function App() {
           <GesturePills />
           <FloatingDock />
           <CoachMarks />
+          <CountdownOverlay />
+          <RecordingBadge />
+          <CaptureReview />
           <Toast />
         </section>
       )}

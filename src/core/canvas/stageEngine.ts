@@ -19,6 +19,9 @@ import { useMemes } from '@/store/memes'
 import { useUi, type Hint } from '@/store/ui'
 import { onVibe } from '@/store/vibe'
 import type { HandGestureId, PerceptionSnapshot } from '@/types'
+import { CaptureController } from '@/core/capture/captureController'
+import { getBus } from '@/core/audio/engine'
+import { Compositor, type CompositorSource } from './compositor'
 import { FxEngine } from './fx'
 import { ArProps } from './props/arProps'
 import { CameraLayer } from './layers/cameraLayer'
@@ -68,6 +71,14 @@ export class StageEngine {
   private pulseV = 0
   private shakeApplied = false
   private comboScores: Record<string, number> = {}
+  /** Memes fired recently (Live Photo metadata). */
+  readonly memeLog: { t: number; memeId: string; soundId: string }[] = []
+  private streamComp: Compositor | null = null
+  private stillComp: Compositor | null = null
+  private streamLongEdge = 0
+  private streamStream: MediaStream | null = null
+  private lastStreamFrame = 0
+  readonly capture: CaptureController
   private vibeParticles = 'peak'
   private unsubVibe: () => void
   private dwellEl: Element | null = null
@@ -119,6 +130,7 @@ export class StageEngine {
       this.cameraLayer.filter = p.filter
       this.vibeParticles = p.particles[0] ?? 'peak'
     })
+    this.capture = new CaptureController(this)
     this.loop.start()
   }
 
@@ -305,6 +317,7 @@ export class StageEngine {
         now,
       )
       useFx.getState().set({ lastMeme: meme?.name ?? null })
+      if (meme) this.logMeme(meme.id, meme.soundId, now)
     }
 
     // Adaptive quality + reduced motion.
@@ -370,6 +383,14 @@ export class StageEngine {
       micLevel: fxState.soundReactive ? this.mic.level : -1,
       dwell: this.dwellRing,
     })
+    if (
+      this.streamStream &&
+      this.streamComp &&
+      now - this.lastStreamFrame >= 1000 / 30 - 2
+    ) {
+      this.lastStreamFrame = now
+      this.streamComp.render(this.compositorSource(), now)
+    }
     if (now - this.lastPublish > 100) {
       this.lastPublish = now
       this.publish(snapshot.hands.length, snapshot.faces.length)
@@ -454,6 +475,71 @@ export class StageEngine {
     if (useUi.getState().hint !== hint) useUi.getState().setHint(hint)
   }
 
+  private logMeme(memeId: string, soundId: string, t: number): void {
+    this.memeLog.push({ t, memeId, soundId })
+    while (this.memeLog.length && t - this.memeLog[0]!.t > 30_000)
+      this.memeLog.shift()
+  }
+
+  /** Everything the compositor needs to reproduce Layers 0-2. */
+  compositorSource(): CompositorSource {
+    return {
+      video: this.stream ? this.el.video : null,
+      view: this.view,
+      snapshot: this.tracker.snapshot,
+      fx: this.fx,
+      props: this.props,
+      activeStrokes: this.controller.activeStrokes,
+      filter: this.cameraLayer.filter,
+      mirror: this.cameraLayer.mirror,
+      shake: this.fx.shake,
+    }
+  }
+
+  /**
+   * Starts rendering the compositor every frame (30 fps) and returns its
+   * stream with the master-bus audio track. Reused while already running.
+   */
+  startStream(longEdge: number): MediaStream | null {
+    if (this.streamStream && this.streamLongEdge === longEdge)
+      return this.streamStream
+    this.stopStream()
+    this.streamComp ??= new Compositor()
+    const { w, h } = Compositor.sizeFor(this.view, longEdge)
+    this.streamComp.resize(w, h)
+    this.streamComp.render(this.compositorSource(), performance.now())
+    const canvas = this.streamComp.canvas as HTMLCanvasElement & {
+      captureStream?: (fps?: number) => MediaStream
+    }
+    if (!canvas.captureStream) return null
+    const stream = canvas.captureStream(30)
+    const audio = getBus()?.record?.stream.getAudioTracks()[0]
+    if (audio) stream.addTrack(audio)
+    this.streamStream = stream
+    this.streamLongEdge = longEdge
+    return stream
+  }
+
+  stopStream(): void {
+    // Only stop the video track; the audio track belongs to the shared bus.
+    this.streamStream?.getVideoTracks().forEach((t) => t.stop())
+    this.streamStream = null
+    this.streamLongEdge = 0
+  }
+
+  get isStreaming(): boolean {
+    return !!this.streamStream
+  }
+
+  /** Renders one still at the camera's native resolution (no HUD). */
+  captureStill(): HTMLCanvasElement {
+    this.stillComp ??= new Compositor()
+    const native = Math.max(this.view.srcWidth, this.view.srcHeight)
+    const { w, h } = Compositor.sizeFor(this.view, Math.max(native, 1280))
+    this.stillComp.resize(w, h)
+    return this.stillComp.render(this.compositorSource(), performance.now())
+  }
+
   /** Fires a meme manually (button / no-camera mode). */
   triggerMeme(memeId: string): void {
     const meme = useMemes.getState().memes.find((m) => m.id === memeId)
@@ -465,6 +551,7 @@ export class StageEngine {
       performance.now(),
     )
     useFx.getState().set({ lastMeme: meme.name })
+    this.logMeme(meme.id, meme.soundId, performance.now())
   }
 
   async setSoundReactive(on: boolean): Promise<void> {
@@ -527,6 +614,8 @@ export class StageEngine {
     this.resizeObserver?.disconnect()
     window.removeEventListener('resize', this.onWindowResize)
     this.controller.reset()
+    this.capture.dispose()
+    this.stopStream()
     this.unsubVibe()
     useUi.getState().setHint(null)
     this.mic.stop()
