@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties } from 'react'
+import { lazy, Suspense, useEffect, type CSSProperties } from 'react'
 import {
   ArrowLeft,
   CircleHelp,
@@ -30,6 +30,14 @@ import { useStage } from '@/store/stage'
 import { useUi } from '@/store/ui'
 import { useVibe } from '@/store/vibe'
 import { vi } from '@/i18n/vi'
+import { loadCustomMemes } from '@/core/storage/customMemes'
+import { startSettingsSync } from '@/core/storage/settingsSync'
+import { useAlbum } from '@/store/album'
+import { setMuted } from '@/core/audio/engine'
+import { useFx } from '@/store/fx'
+
+// Photo Book (react-pageflip) is its own chunk, loaded on demand.
+const PhotoBookView = lazy(() => import('@/components/photobook/PhotoBookView'))
 
 function ModeChip() {
   const mode = useScene((s) => s.mode)
@@ -65,6 +73,19 @@ function FpsBadge() {
 export function App() {
   const { started, setStarted, debug, setDebug, offline } = useSession()
   const preset = useVibe((s) => s.preset)
+  const bookOpen = useUi((s) => s.bookOpen)
+  useEffect(() => {
+    void startSettingsSync((s) => {
+      if (s.muted) {
+        setMuted(true)
+        useFx.getState().set({ muted: true })
+      }
+      if (s.mirror === false) useStage.getState().set({ mirror: false })
+    }).catch(() => undefined)
+  }, [])
+  useEffect(() => {
+    getStageEngine()?.setVisionPaused(bookOpen)
+  }, [bookOpen])
   useEffect(() => {
     const handle = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -129,7 +150,15 @@ export function App() {
 
   function start() {
     // AudioContext must be created/resumed inside this user gesture.
-    void unlockAudio().catch(() => undefined)
+    void unlockAudio()
+      .catch(() => undefined)
+      // Custom meme sounds need the AudioContext to decode.
+      .then(() => loadCustomMemes())
+      .catch(() => undefined)
+    void useAlbum
+      .getState()
+      .refresh()
+      .catch(() => undefined)
     setStarted(true)
   }
 
@@ -210,6 +239,15 @@ export function App() {
           <CountdownOverlay />
           <RecordingBadge />
           <CaptureReview />
+          {bookOpen && (
+            <Suspense
+              fallback={<p className="stage-note">{vi.album.loading}</p>}
+            >
+              <PhotoBookView
+                onClose={() => useUi.getState().setBookOpen(false)}
+              />
+            </Suspense>
+          )}
           <Toast />
         </section>
       )}

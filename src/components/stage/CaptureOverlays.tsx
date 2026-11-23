@@ -8,6 +8,10 @@ import {
 } from '@/core/capture/filename'
 import { useCapture } from '@/store/capture'
 import { useUi } from '@/store/ui'
+import { isQuotaError, useAlbum } from '@/store/album'
+import { useVibe } from '@/store/vibe'
+import type { NewPage } from '@/core/storage/repo'
+import { BookHeart } from 'lucide-react'
 import { vi } from '@/i18n/vi'
 
 /** Big 3-2-1 digits. DOM overlay: never part of the compositor output. */
@@ -59,6 +63,25 @@ function ClipPreview({ blob, poster }: { blob: Blob; poster: Blob }) {
 export function CaptureReview() {
   const { phase, photo, video } = useCapture()
   const [gifBusy, setGifBusy] = useState(false)
+  const [saved, setSaved] = useState(false)
+  useEffect(() => setSaved(false), [photo, video])
+  const saveTo = async (page: NewPage, newBook: boolean) => {
+    try {
+      await useAlbum.getState().save(page, useVibe.getState().vibeId, newBook)
+      setSaved(true)
+      useUi.getState().showToast({
+        text: vi.capture.saved,
+        actionLabel: vi.album.open,
+        action: () => useUi.getState().setBookOpen(true),
+        ttl: 5000,
+      })
+    } catch (e) {
+      useUi.getState().showToast({
+        text: isQuotaError(e) ? vi.album.quota : vi.capture.failed,
+        ttl: 7000,
+      })
+    }
+  }
   const close = () => getStageEngine()?.capture.closeReview()
   const fail = () =>
     useUi.getState().showToast({ text: vi.capture.failed, ttl: 4000 })
@@ -128,7 +151,7 @@ export function CaptureReview() {
           </div>
           <div className="card-actions">
             <button
-              className="primary"
+              className="ghost"
               onClick={() => downloadBlob(photo.png, captureFilename('png'))}
             >
               <Download size={18} />
@@ -157,7 +180,62 @@ export function CaptureReview() {
               {vi.capture.retake}
             </button>
           </div>
-          <p className="panel-note">{vi.capture.albumLater}</p>
+          <div className="card-actions">
+            <button
+              className="primary"
+              disabled={saved}
+              onClick={() => {
+                const last = photo.clips[photo.clips.length - 1]
+                void saveTo(
+                  {
+                    kind: 'photo',
+                    photo: photo.png,
+                    liveClip: last?.blob,
+                    poster: last?.poster,
+                    soundIds: [
+                      ...new Set(photo.clips.flatMap((c) => c.soundIds)),
+                    ],
+                    memeIds: [
+                      ...new Set(photo.clips.flatMap((c) => c.memeIds)),
+                    ],
+                    caption: '',
+                    layout: photo.layout,
+                  },
+                  false,
+                )
+              }}
+            >
+              <BookHeart size={18} />
+              {saved ? vi.capture.saved : vi.capture.saveAlbum}
+            </button>
+            {!saved && (
+              <button
+                className="link"
+                onClick={() => {
+                  const last = photo.clips[photo.clips.length - 1]
+                  void saveTo(
+                    {
+                      kind: 'photo',
+                      photo: photo.png,
+                      liveClip: last?.blob,
+                      poster: last?.poster,
+                      soundIds: [
+                        ...new Set(photo.clips.flatMap((c) => c.soundIds)),
+                      ],
+                      memeIds: [
+                        ...new Set(photo.clips.flatMap((c) => c.memeIds)),
+                      ],
+                      caption: '',
+                      layout: photo.layout,
+                    },
+                    true,
+                  )
+                }}
+              >
+                {vi.capture.saveNewBook}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -200,7 +278,31 @@ export function CaptureReview() {
               {vi.capture.close}
             </button>
           </div>
-          <p className="panel-note">{vi.capture.albumLater}</p>
+          <div className="card-actions">
+            <button
+              className="primary"
+              disabled={saved || !video.poster}
+              onClick={() =>
+                video.poster &&
+                void saveTo(
+                  {
+                    kind: 'video',
+                    photo: video.poster,
+                    liveClip: video.blob,
+                    poster: video.poster,
+                    soundIds: video.soundIds,
+                    memeIds: video.memeIds,
+                    caption: '',
+                    layout: 'single',
+                  },
+                  false,
+                )
+              }
+            >
+              <BookHeart size={18} />
+              {saved ? vi.capture.saved : vi.capture.saveAlbum}
+            </button>
+          </div>
         </div>
       </div>
     )

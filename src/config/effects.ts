@@ -111,4 +111,11 @@ export const effects: Record<EffectId, EffectDef> = {
     sound: 'boing',
     durationMs: 2600,
   },
+  // User-created memes: card + sparkles; the sound is the meme's own.
+  'fx-custom': {
+    id: 'fx-custom',
+    memeAt: 'head',
+    particles: [{ preset: 'sparkles', at: 'head' }],
+    sound: 'pop',
+  },
 }

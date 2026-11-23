@@ -26,6 +26,8 @@ interface UiState {
   /** Onboarding coach mark step (0..2), or -1 when done/skipped. */
   coach: number
   hint: Hint
+  bookOpen: boolean
+  setBookOpen(open: boolean): void
   showToast(t: Omit<Toast, 'id'>): void
   dismissToast(): void
   setDrawer(d: DrawerPanel | null): void
@@ -48,6 +50,8 @@ export const useUi = create<UiState>((set) => ({
   drawer: null,
   coach: coachStart(),
   hint: null,
+  bookOpen: false,
+  setBookOpen: (bookOpen) => set({ bookOpen, drawer: null }),
   showToast: (t) => set({ toast: { ...t, id: ++seq } }),
   dismissToast: () => set({ toast: null }),
   setDrawer: (drawer) => set({ drawer }),

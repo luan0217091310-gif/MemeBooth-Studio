@@ -27,6 +27,9 @@ export interface VideoResult {
   ext: 'webm' | 'mp4'
   mime: string
   durationMs: number
+  poster: Blob | null
+  soundIds: string[]
+  memeIds: string[]
   createdAt: number
 }
 

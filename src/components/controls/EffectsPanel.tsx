@@ -1,6 +1,8 @@
 import { props } from '@/config/props'
 import { getStageEngine } from '@/components/stage/CameraStage'
 import { useFx } from '@/store/fx'
+import { useAlbum } from '@/store/album'
+import { useEffect } from 'react'
 import { vi } from '@/i18n/vi'
 
 const propUrl = (svg: string) =>
@@ -34,6 +36,13 @@ export function PropsPanel() {
 export function SettingsPanel() {
   const fx = useFx()
   const engine = () => getStageEngine()
+  const usage = useAlbum((s) => s.usage)
+  useEffect(() => {
+    void useAlbum
+      .getState()
+      .refresh()
+      .catch(() => undefined)
+  }, [])
   return (
     <div className="panel-body settings">
       <label className="switch">
@@ -94,6 +103,15 @@ export function SettingsPanel() {
         />
         {vi.fx.reducedMotion}
       </label>
+      {usage && usage.quota > 0 && (
+        <p className="panel-note">
+          {vi.album.usage}: {(usage.usage / 1e6).toFixed(1)} MB /{' '}
+          {(usage.quota / 1e6).toFixed(0)} MB
+          {usage.usage / usage.quota > 0.8 && (
+            <b className="warn"> · {vi.album.nearlyFull}</b>
+          )}
+        </p>
+      )}
     </div>
   )
 }

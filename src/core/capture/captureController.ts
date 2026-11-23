@@ -193,8 +193,15 @@ export class CaptureController {
     if (!rec) return
     this.videoRec = null
     window.clearTimeout(this.videoTimer)
+    const from = useCapture.getState().recStartedAt
+    const poster = await canvasToBlob(
+      copyCanvas(this.engine.captureStill()),
+      'image/jpeg',
+      0.85,
+    ).catch(() => null)
     try {
       const res = await rec.stop()
+      const log = this.engine.memeLog.filter((m) => m.t >= from)
       useCapture.getState().set({
         phase: 'videoReview',
         video: {
@@ -204,6 +211,9 @@ export class CaptureController {
           mime: res.mime,
           durationMs: res.durationMs,
           createdAt: Date.now(),
+          poster,
+          soundIds: log.map((m) => m.soundId),
+          memeIds: log.map((m) => m.memeId),
         },
       })
     } catch {

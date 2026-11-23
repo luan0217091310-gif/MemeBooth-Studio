@@ -109,14 +109,18 @@ export function drawCover(
   ctx: CanvasRenderingContext2D,
   src: CanvasImageSource & { width: number; height: number },
   r: Rect,
+  /** Intrinsic size when `src.width/height` are not the pixel size (video). */
+  dims?: { width: number; height: number },
 ): void {
-  const s = Math.max(r.w / src.width, r.h / src.height)
+  const sz = dims ?? src
+  if (!sz.width || !sz.height) return
+  const s = Math.max(r.w / sz.width, r.h / sz.height)
   const sw = r.w / s
   const sh = r.h / s
   ctx.drawImage(
     src,
-    (src.width - sw) / 2,
-    (src.height - sh) / 2,
+    (sz.width - sw) / 2,
+    (sz.height - sh) / 2,
     sw,
     sh,
     r.x,

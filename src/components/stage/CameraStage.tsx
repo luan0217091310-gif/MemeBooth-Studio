@@ -34,6 +34,8 @@ export function CameraStage() {
     })
     engine.current = engineInstance
     activeEngine = engineInstance
+    // Restore the persisted mirror setting before the first frame.
+    engineInstance.setMirror(useStage.getState().mirror)
     void engineInstance.startCamera()
     return () => {
       engineInstance.dispose()

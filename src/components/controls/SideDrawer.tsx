@@ -14,6 +14,7 @@ import { BrushPanel, StickerPanel } from './CreativeToolbar'
 import { MemePanel } from './MemePanel'
 import { PropsPanel, SettingsPanel } from './EffectsPanel'
 import { VibePicker } from './VibePicker'
+import { MemeCreator } from './MemeCreator'
 import { useUi, type DrawerPanel } from '@/store/ui'
 import { vi } from '@/i18n/vi'
 
@@ -33,7 +34,6 @@ const entries: Entry[] = [
     id: 'creator',
     label: vi.drawer.creator,
     icon: <WandSparkles size={20} />,
-    soon: true,
   },
   { id: 'props', label: vi.drawer.props, icon: <Glasses size={20} /> },
   { id: 'vibe', label: vi.drawer.vibe, icon: <Palette size={20} /> },
@@ -41,7 +41,6 @@ const entries: Entry[] = [
     id: 'book',
     label: vi.drawer.book,
     icon: <BookHeart size={20} />,
-    soon: true,
   },
   { id: 'settings', label: vi.drawer.settings, icon: <Settings size={20} /> },
 ]
@@ -60,6 +59,8 @@ function panelFor(id: DrawerPanel) {
       return <VibePicker />
     case 'settings':
       return <SettingsPanel />
+    case 'creator':
+      return <MemeCreator />
     default:
       return null
   }
@@ -87,7 +88,11 @@ export function SideDrawer() {
             title={e.soon ? e.label + ' · ' + vi.soon : e.label}
             disabled={e.soon}
             data-dwell
-            onClick={() => setDrawer(open === e.id ? null : e.id)}
+            onClick={() =>
+              e.id === 'book'
+                ? useUi.getState().setBookOpen(true)
+                : setDrawer(open === e.id ? null : e.id)
+            }
           >
             {e.icon}
           </button>

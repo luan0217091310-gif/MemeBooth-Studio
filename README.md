@@ -89,7 +89,7 @@ Các module được thêm khi đến giai đoạn tương ứng. React được
 | 3         | Meme, combo, hạt, AR và âm thanh                     | Đã triển khai, chờ thử bằng mặt/tay thật  |
 | 4         | Vibe Sync, onboarding và điều khiển                  | Đã triển khai, chờ thử với người dùng mới |
 | 5         | Photobooth, Live Photo, GIF và video                 | Đã triển khai, chờ thử Safari             |
-| 6         | IndexedDB, meme tự tạo, Photo Book và Highlight Reel | Dự kiến                                   |
+| 6         | IndexedDB, meme tự tạo, Photo Book và Highlight Reel | Đã triển khai và tự kiểm                  |
 | 7         | Pose Challenge, chia sẻ, QR và nghiệm thu toàn bộ    | Dự kiến                                   |
 
 Mốc 0 đạt typecheck, lint, 3 bài unit test và build. JavaScript ban đầu **52,28 kB gzip** theo Vite. Bản build đưa **23 tệp** vào danh sách dùng ngoại tuyến. Bài kiểm tra trình duyệt ngắt mạng, tải lại, mở sân khấu và bảng thông tin, đọc lại 6 tệp AI, đối chiếu SHA-256 và kiểm tra các request lỗi hoặc ra ngoài origin. [Kết quả theo trình duyệt](docs/browser-matrix.md)

@@ -173,8 +173,15 @@ export class StageEngine {
   private onPointerLeave = () => {
     this.pointer = null
   }
+  private externallyPaused = false
   private onVisibility = () => {
-    this.vision?.setPaused(document.hidden)
+    this.vision?.setPaused(document.hidden || this.externallyPaused)
+  }
+
+  /** Stops inference (e.g. while the Photo Book is open). */
+  setVisionPaused(paused: boolean): void {
+    this.externallyPaused = paused
+    this.vision?.setPaused(paused || document.hidden)
   }
 
   private resize(): void {

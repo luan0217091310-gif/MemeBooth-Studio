@@ -1,5 +1,6 @@
 import { effects, type AnchorKind, type EffectDef } from '@/config/effects'
 import { playSound } from '@/core/audio/soundRegistry'
+import { blobUrl } from '@/core/storage/blobUrls'
 import type { HandGestureId, MemeDef, PerceptionSnapshot, Vec2 } from '@/types'
 import type { StrokeSpace } from './brushes'
 import { textFont } from './items'
@@ -37,7 +38,11 @@ function memeImage(meme: MemeDef): HTMLImageElement | null {
       img.src =
         'data:image/svg+xml;charset=utf-8,' +
         encodeURIComponent(meme.visual.svg)
-    else img.src = meme.visual.blobKey // phase 6: object URL registered by the meme store
+    else {
+      const url = blobUrl(meme.visual.blobKey)
+      if (!url) return null
+      img.src = url
+    }
     memeImages.set(meme.id, img)
   }
   return img.complete && img.naturalWidth ? img : null
@@ -164,7 +169,12 @@ export class FxEngine {
       this.shakeMs = fx.shakeMs
     }
     if (meme && (fx?.memeAt ?? 'head')) this.addCard(meme, fx, ctx, now)
-    playSound(fx?.sound ?? meme?.soundId ?? 'pop')
+    // Custom memes always play their own sound (synth, upload or recording).
+    playSound(
+      meme?.source === 'custom'
+        ? meme.soundId
+        : (fx?.sound ?? meme?.soundId ?? 'pop'),
+    )
   }
 
   private addCard(
