@@ -12,6 +12,9 @@ import {
 } from 'lucide-react'
 import { DebugPanel } from '@/components/common/DebugPanel'
 import { CameraStage } from '@/components/stage/CameraStage'
+import { CreativeToolbar } from '@/components/controls/CreativeToolbar'
+import { Toast } from '@/components/common/Toast'
+import { useScene } from '@/store/scene'
 import { useStage } from '@/store/stage'
 import { artwork } from '@/config/assets'
 import { unlockAudio } from '@/core/audio/engine'
@@ -32,6 +35,19 @@ export function App() {
         event.target instanceof HTMLTextAreaElement
       )
         return
+      const mod = event.ctrlKey || event.metaKey
+      const key = event.key.toLowerCase()
+      if (mod && (key === 'z' || key === 'y')) {
+        event.preventDefault()
+        if (key === 'y' || event.shiftKey) useScene.getState().redo()
+        else useScene.getState().undo()
+        return
+      }
+      if (key === 'm' && !mod && !event.altKey && !event.repeat) {
+        const scene = useScene.getState()
+        scene.setMode(scene.mode === 'draw' ? 'meme' : 'draw')
+        return
+      }
       if (
         event.key.toLowerCase() === 'd' &&
         !event.repeat &&
@@ -114,6 +130,8 @@ export function App() {
           ) : (
             <div className="session-live">
               <CameraStage />
+              <CreativeToolbar />
+              <Toast />
               <button className="ghost back" onClick={() => setStarted(false)}>
                 {vi.back}
               </button>

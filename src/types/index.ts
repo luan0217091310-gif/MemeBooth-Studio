@@ -120,3 +120,39 @@ export interface ShareProvider {
   isAvailable(): boolean
   share(file: Blob, name: string): Promise<{ qrUrl?: string }>
 }
+
+/** Point in display space plus timestamp (ms). */
+export type StrokePoint = [x: number, y: number, t: number]
+
+export interface Stroke {
+  id: string
+  brushId: BrushId
+  color: string
+  /** Width as a fraction of stage width. */
+  width: number
+  points: StrokePoint[]
+}
+
+export type TextStyle = 'meme' | 'cute'
+
+interface SceneItemBase {
+  id: string
+  /** Center, display space. */
+  x: number
+  y: number
+  scale: number
+  /** Radians. */
+  rotation: number
+  z: number
+}
+export interface StickerItem extends SceneItemBase {
+  kind: 'sticker'
+  stickerId: string
+}
+export interface TextItem extends SceneItemBase {
+  kind: 'text'
+  text: string
+  style: TextStyle
+  color: string
+}
+export type SceneItem = StickerItem | TextItem

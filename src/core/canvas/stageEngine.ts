@@ -8,7 +8,10 @@ import { vi } from '@/i18n/vi'
 import { useSession } from '@/store/session'
 import { useStage } from '@/store/stage'
 import type { Vec2 } from '@/types'
+import { InteractionController } from '@/core/interaction/controller'
+import { useScene } from '@/store/scene'
 import { CameraLayer } from './layers/cameraLayer'
+import { CreativeLayer } from './layers/creativeLayer'
 import { FxLayer } from './layers/fxLayer'
 import { HudLayer } from './layers/hudLayer'
 import { RenderLoop } from './renderLoop'
@@ -18,6 +21,7 @@ export interface StageElements {
   root: HTMLElement
   video: HTMLVideoElement
   camera: HTMLCanvasElement
+  creative: HTMLCanvasElement
   fx: HTMLCanvasElement
   hud: HTMLCanvasElement
 }
@@ -29,7 +33,9 @@ export interface StageElements {
 export class StageEngine {
   private loop: RenderLoop
   private cameraLayer: CameraLayer
+  private creativeLayer: CreativeLayer
   private fxLayer: FxLayer
+  readonly controller = new InteractionController()
   private hudLayer: HudLayer
   private stream: MediaStream | null = null
   private vision?: VisionClient
@@ -44,6 +50,7 @@ export class StageEngine {
 
   constructor(private el: StageElements) {
     this.cameraLayer = new CameraLayer(el.camera)
+    this.creativeLayer = new CreativeLayer(el.creative)
     this.fxLayer = new FxLayer(el.fx)
     this.hudLayer = new HudLayer(el.hud)
     this.view = createViewport(1, 1, 16, 9)
@@ -53,9 +60,12 @@ export class StageEngine {
       this.resizeObserver.observe(el.root)
     } else window.addEventListener('resize', this.onWindowResize)
     this.resize()
-    el.root.addEventListener('pointermove', this.onPointer)
-    el.root.addEventListener('pointerdown', this.onPointer)
+    el.root.addEventListener('pointermove', this.onPointerMove)
+    el.root.addEventListener('pointerdown', this.onPointerDown)
+    el.root.addEventListener('pointerup', this.onPointerUp)
+    el.root.addEventListener('pointercancel', this.onPointerUp)
     el.root.addEventListener('pointerleave', this.onPointerLeave)
+    el.root.addEventListener('wheel', this.onWheel, { passive: false })
     document.addEventListener('visibilitychange', this.onVisibility)
     useStage.getState().set({
       perf: {
@@ -66,14 +76,35 @@ export class StageEngine {
     this.loop.start()
   }
 
-  private onPointer = (e: PointerEvent) => {
+  private toDisplayPoint(e: { clientX: number; clientY: number }): Vec2 {
     const rect = this.el.root.getBoundingClientRect()
-    this.pointer = fromPixel(
-      this.view,
-      e.clientX - rect.left,
-      e.clientY - rect.top,
-      this.pointer ?? { x: 0, y: 0 },
-    )
+    return fromPixel(this.view, e.clientX - rect.left, e.clientY - rect.top)
+  }
+  /** Only events on the stage surface itself (not overlay UI) edit the scene. */
+  private isStageTarget(e: Event): boolean {
+    const t = e.target as Element | null
+    return !!t && (t === this.el.root || t.classList.contains('layer'))
+  }
+  private onPointerMove = (e: PointerEvent) => {
+    const p = this.toDisplayPoint(e)
+    this.pointer = e.pointerType === 'touch' ? null : p
+    this.controller.pointerMove(e.pointerId, p, performance.now())
+  }
+  private onPointerDown = (e: PointerEvent) => {
+    if (!this.isStageTarget(e) || e.button > 0) return
+    const p = this.toDisplayPoint(e)
+    this.pointer = e.pointerType === 'touch' ? null : p
+    this.el.root.setPointerCapture?.(e.pointerId)
+    this.controller.pointerDown(e.pointerId, p, performance.now())
+  }
+  private onPointerUp = (e: PointerEvent) => {
+    this.controller.pointerUp(e.pointerId)
+    if (e.pointerType === 'touch') this.pointer = null
+  }
+  private onWheel = (e: WheelEvent) => {
+    if (!this.isStageTarget(e)) return
+    if (this.controller.wheel(this.toDisplayPoint(e), e.deltaY, e.shiftKey))
+      e.preventDefault()
   }
   private onWindowResize = () => this.resize()
   private onPointerLeave = () => {
@@ -89,6 +120,7 @@ export class StageEngine {
     const w = Math.max(1, Math.round(rect.width * this.dpr))
     const h = Math.max(1, Math.round(rect.height * this.dpr))
     this.cameraLayer.resize(w, h)
+    this.creativeLayer.resize(w, h)
     this.fxLayer.resize(w, h)
     this.hudLayer.resize(w, h)
     this.updateView(rect.width, rect.height)
@@ -188,15 +220,22 @@ export class StageEngine {
     )
       this.updateView(this.view.width, this.view.height)
     if (video) this.vision?.pump(video, now)
+    this.tracker.aspect = this.view.srcHeight / this.view.srcWidth
     const snapshot = this.tracker.sample(now)
     const debug = useSession.getState().debug
+    this.controller.update(snapshot, this.view, now, this.pointer)
     this.cameraLayer.bloomEnabled = !this.loop.stats.degraded
     this.cameraLayer.draw(video, this.view, this.dpr, now)
+    this.creativeLayer.active = this.controller.activeStrokes
+    this.creativeLayer.draw(this.view, this.dpr)
     this.fxLayer.showTestLabel = debug
     this.fxLayer.draw(this.view, this.dpr, snapshot, vi.testLabel)
     this.hudLayer.draw(this.view, this.dpr, {
       snapshot,
-      pointer: this.pointer,
+      hud: this.controller.hud,
+      items: useScene.getState().items,
+      trashSize: this.controller.trashRect.size,
+      trashInset: this.controller.trashRect.inset,
       debug,
     })
     if (now - this.lastPublish > 100) {
@@ -234,9 +273,13 @@ export class StageEngine {
     this.stream = null
     this.resizeObserver?.disconnect()
     window.removeEventListener('resize', this.onWindowResize)
-    this.el.root.removeEventListener('pointermove', this.onPointer)
-    this.el.root.removeEventListener('pointerdown', this.onPointer)
+    this.controller.reset()
+    this.el.root.removeEventListener('pointermove', this.onPointerMove)
+    this.el.root.removeEventListener('pointerdown', this.onPointerDown)
+    this.el.root.removeEventListener('pointerup', this.onPointerUp)
+    this.el.root.removeEventListener('pointercancel', this.onPointerUp)
     this.el.root.removeEventListener('pointerleave', this.onPointerLeave)
+    this.el.root.removeEventListener('wheel', this.onWheel)
     document.removeEventListener('visibilitychange', this.onVisibility)
   }
 }

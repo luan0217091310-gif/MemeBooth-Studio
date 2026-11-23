@@ -15,6 +15,7 @@ export function CameraStage() {
   const root = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const camera = useRef<HTMLCanvasElement>(null)
+  const creative = useRef<HTMLCanvasElement>(null)
   const fx = useRef<HTMLCanvasElement>(null)
   const hud = useRef<HTMLCanvasElement>(null)
   const engine = useRef<StageEngine | null>(null)
@@ -25,6 +26,7 @@ export function CameraStage() {
       root: root.current!,
       video: video.current!,
       camera: camera.current!,
+      creative: creative.current!,
       fx: fx.current!,
       hud: hud.current!,
     })
@@ -49,6 +51,7 @@ export function CameraStage() {
         aria-hidden
       />
       <canvas ref={camera} className="layer" data-layer="0" />
+      <canvas ref={creative} className="layer" data-layer="1" />
       <canvas ref={fx} className="layer" data-layer="2" />
       <canvas ref={hud} className="layer hud" data-layer="3" aria-hidden />
       {status === 'requesting' && (

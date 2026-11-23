@@ -28,4 +28,29 @@ export const smoothingConfig = {
   scoreAlpha: 0.3,
 }
 
+export const gestureConfig = {
+  /** tip-to-wrist / pip-to-wrist ratio: below = curled, above = extended. */
+  fingerRatio: { curled: 1.0, extended: 1.25 },
+  pinchEnter: 0.25,
+  pinchExit: 0.35,
+  activeScore: 0.6,
+}
+
+export const drawConfig = {
+  penDownMs: 120,
+  penUpMs: 60,
+  grabMs: 60,
+  eraseMs: 100,
+  pauseMs: 600,
+  clearMs: 2000,
+  /** Points closer than this (display units) to the previous are dropped. */
+  minPointDist: 0.003,
+  penEmaAlpha: 0.45,
+  /** PINCH grabs items within this distance (fraction of stage width). */
+  grabRadius: 0.06,
+  eraserRadius: 0.035,
+  undoLimit: 60,
+  clearUndoToastMs: 5000,
+}
+
 export type VisionConfig = typeof visionConfig

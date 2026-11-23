@@ -7,6 +7,7 @@ import type {
   Vec2,
 } from '@/types'
 import { Ema } from './filters/ema'
+import { classifyGeometry, type GeometryState } from './gestures/handGestures'
 import { PointSetFilter, type OneEuroParams } from './filters/oneEuro'
 import type { RawResult } from './protocol'
 import { normalizeHandedness, toDisplay } from './toDisplay'
@@ -18,7 +19,6 @@ const BUILTIN: Record<string, HandGestureId> = {
   Thumb_Up: 'THUMB_UP',
   Thumb_Down: 'THUMB_DOWN',
   ILoveYou: 'I_LOVE_YOU',
-  Pointing_Up: 'POINT',
 }
 
 interface Keyframe {
@@ -74,6 +74,9 @@ class HandTrack extends Track {
   handedness: 'Left' | 'Right' = 'Right'
   readonly scores = new Map<HandGestureId, Ema>()
   readonly gestures: Partial<Record<HandGestureId, number>> = {}
+  readonly geo: GeometryState = { pinch: false }
+  readonly pointingUp = new Ema(smoothingConfig.scoreAlpha)
+  pointingScore = 0
 }
 
 class FaceTrack extends Track {
@@ -98,6 +101,8 @@ export class PerceptionTracker {
   private interval = 1000 / visionConfig.targetFps
   private lastResultTs = 0
   params: OneEuroParams = { ...smoothingConfig }
+  /** srcHeight / srcWidth, so geometry distances are isotropic. */
+  aspect = 9 / 16
   readonly snapshot: PerceptionSnapshot = {
     ts: 0,
     hands: [],
@@ -160,6 +165,8 @@ export class PerceptionTracker {
       used.add(track)
       track.handedness = handedness
       track.push(result.ts, points)
+      const pointing = raw.gestures.find((g) => g.name === 'Pointing_Up')
+      track.pointingScore = track.pointingUp.next(pointing?.score ?? 0)
       const seen = new Set<HandGestureId>()
       for (const g of raw.gestures) {
         const id = BUILTIN[g.name]
@@ -200,6 +207,14 @@ export class PerceptionTracker {
           gestures: {},
         })
       state.landmarks = h.sample(now, this.interval)
+      // Geometry gestures run at render rate on smoothed landmarks.
+      classifyGeometry(
+        state.landmarks,
+        h.geo,
+        h.gestures,
+        this.aspect,
+        h.pointingScore,
+      )
       state.handedness = h.handedness
       state.gestures = h.gestures
     }

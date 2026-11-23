@@ -1,4 +1,6 @@
-import type { PerceptionSnapshot, Vec2 } from '@/types'
+import type { Cursor, HudState } from '@/core/interaction/controller'
+import type { PerceptionSnapshot, SceneItem, Vec2 } from '@/types'
+import { itemHalfSize } from '../items'
 import { lengthToPixel, toPixel, type Viewport } from '../viewport'
 
 // Hand skeleton connections (MediaPipe hand topology).
@@ -32,7 +34,10 @@ const tmpB: Vec2 = { x: 0, y: 0 }
 
 export interface HudInput {
   snapshot: PerceptionSnapshot
-  pointer: Vec2 | null
+  hud: HudState
+  items: readonly SceneItem[]
+  trashSize: number
+  trashInset: number
   debug: boolean
 }
 
@@ -97,25 +102,137 @@ export class HudLayer {
         }
       }
     }
-    // Fingertip cursors (index tip = landmark 8).
-    for (const hand of snapshot.hands) {
-      const tip = hand.landmarks[8]
-      if (tip) this.cursor(ctx, toPixel(view, tip, tmpA), view)
+    const { hud } = input
+    // Outline hovered / grabbed items.
+    if (hud.highlight.size) {
+      ctx.save()
+      ctx.setLineDash([8, 6])
+      ctx.lineWidth = 2.5
+      ctx.strokeStyle = '#ff4fd8'
+      for (const item of input.items) {
+        if (!hud.highlight.has(item.id)) continue
+        const { hw, hh } = itemHalfSize(item)
+        toPixel(view, item, tmpA)
+        const unit = lengthToPixel(view, 1)
+        ctx.save()
+        ctx.translate(tmpA.x, tmpA.y)
+        ctx.rotate(item.rotation)
+        ctx.strokeRect(
+          -hw * unit - 6,
+          -hh * unit - 6,
+          hw * unit * 2 + 12,
+          hh * unit * 2 + 12,
+        )
+        ctx.restore()
+      }
+      ctx.restore()
     }
-    if (input.pointer)
-      this.cursor(ctx, toPixel(view, input.pointer, tmpA), view)
+    if (hud.trash.visible)
+      this.trash(ctx, view, input.trashSize, input.trashInset, hud.trash.hot)
+    for (const c of hud.cursors)
+      this.cursor(ctx, toPixel(view, c.pos, tmpA), view, c, hud.eraserRadius)
   }
 
-  private cursor(ctx: CanvasRenderingContext2D, p: Vec2, view: Viewport): void {
-    const r = Math.max(9, lengthToPixel(view, 0.012))
+  private trash(
+    ctx: CanvasRenderingContext2D,
+    view: Viewport,
+    size: number,
+    inset: number,
+    hot: boolean,
+  ): void {
+    const x = view.width - inset - size
+    const y = view.height - inset - size
+    ctx.save()
+    ctx.fillStyle = hot ? 'rgba(255,59,48,0.9)' : 'rgba(40,30,50,0.6)'
     ctx.beginPath()
-    ctx.arc(p.x, p.y, r, 0, Math.PI * 2)
+    ctx.roundRect(x, y, size, size, 18)
+    ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 3
+    ctx.lineJoin = 'round'
+    const cx = x + size / 2
+    const cy = y + size / 2
+    const s = hot ? 1.15 : 1
+    ctx.beginPath()
+    ctx.moveTo(cx - 14 * s, cy - 10 * s)
+    ctx.lineTo(cx + 14 * s, cy - 10 * s)
+    ctx.moveTo(cx - 5 * s, cy - 14 * s)
+    ctx.lineTo(cx + 5 * s, cy - 14 * s)
+    ctx.rect(cx - 10 * s, cy - 6 * s, 20 * s, 22 * s)
+    ctx.stroke()
+    ctx.restore()
+  }
+
+  private cursor(
+    ctx: CanvasRenderingContext2D,
+    p: Vec2,
+    view: Viewport,
+    c: Cursor,
+    eraserRadius: number,
+  ): void {
+    const r = Math.max(9, lengthToPixel(view, 0.012))
+    ctx.save()
     ctx.lineWidth = 3
     ctx.strokeStyle = '#fff'
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.arc(p.x, p.y, r * 0.35, 0, Math.PI * 2)
-    ctx.fillStyle = '#ff4fd8'
-    ctx.fill()
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'
+    ctx.shadowBlur = 4
+    switch (c.kind) {
+      case 'pen':
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, r * 0.55, 0, Math.PI * 2)
+        ctx.fillStyle = c.color
+        ctx.fill()
+        ctx.stroke()
+        break
+      case 'erase': {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, lengthToPixel(view, eraserRadius), 0, Math.PI * 2)
+        ctx.setLineDash([6, 5])
+        ctx.stroke()
+        break
+      }
+      case 'grab':
+      case 'grabbing':
+        ctx.beginPath()
+        ctx.arc(
+          p.x,
+          p.y,
+          c.kind === 'grabbing' ? r * 0.7 : r * 1.2,
+          0,
+          Math.PI * 2,
+        )
+        ctx.strokeStyle = '#ff4fd8'
+        ctx.stroke()
+        ctx.fillStyle = 'rgba(255,79,216,0.35)'
+        ctx.fill()
+        break
+      case 'pause':
+        ctx.fillStyle = '#fff'
+        ctx.fillRect(p.x - r * 0.6, p.y - r * 0.7, r * 0.4, r * 1.4)
+        ctx.fillRect(p.x + r * 0.2, p.y - r * 0.7, r * 0.4, r * 1.4)
+        if (c.progress > 0) {
+          ctx.beginPath()
+          ctx.arc(
+            p.x,
+            p.y,
+            r * 2.2,
+            -Math.PI / 2,
+            -Math.PI / 2 + c.progress * Math.PI * 2,
+          )
+          ctx.lineWidth = 6
+          ctx.strokeStyle = '#ff3b30'
+          ctx.stroke()
+        }
+        break
+      default:
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, r * 0.35, 0, Math.PI * 2)
+        ctx.fillStyle = '#ff4fd8'
+        ctx.fill()
+    }
+    ctx.restore()
   }
 }
