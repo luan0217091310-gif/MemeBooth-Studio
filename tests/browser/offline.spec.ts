@@ -20,6 +20,7 @@ test('a fresh browser can reopen the studio, debug panel and both models offline
       problems.push(request.url())
   })
   await page.goto('/')
+  await expect(page).toHaveTitle(vi.brand)
   await expect(page.getByRole('status')).toHaveText(vi.offline.ready, {
     timeout: 30000,
   })

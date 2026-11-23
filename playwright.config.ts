@@ -3,12 +3,12 @@ export default defineConfig({
   testDir: './tests/browser',
   testMatch: '**/*.spec.ts',
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: 'http://127.0.0.1:48217',
     channel: process.env.BROWSER_CHANNEL || 'chrome',
   },
   webServer: {
-    command: 'npm run preview -- --host localhost --port 4173 --strictPort',
-    url: 'http://localhost:4173',
+    command: 'npm run preview',
+    url: 'http://127.0.0.1:48217',
     reuseExistingServer: true,
   },
 })

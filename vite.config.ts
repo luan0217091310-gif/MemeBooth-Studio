@@ -20,6 +20,7 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src/', import.meta.url)) },
   },
+  preview: { host: '127.0.0.1', port: 48217, strictPort: true },
   worker: { format: 'es' },
   test: { include: ['tests/**/*.test.{ts,tsx}'], environment: 'jsdom' },
 })

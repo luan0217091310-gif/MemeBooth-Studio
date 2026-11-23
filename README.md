@@ -11,10 +11,10 @@ git clone https://github.com/luan0217091310-gif/MemeBooth-Studio.git
 cd MemeBooth-Studio
 npm ci
 npm run build
-npm run preview -- --host localhost --port 4173 --strictPort
+npm run preview
 ```
 
-Mở **[MemeBooth Studio trên localhost](http://localhost:4173/)** trong trình duyệt cùng máy. Giữ tiến trình preview chạy trong lúc dùng. Nếu cổng 4173 đang bận, chọn cổng khác và mở đúng URL Vite in ra. Bộ nhớ ngoại tuyến gắn với từng địa chỉ và cổng.
+Mở **[MemeBooth Studio trên localhost](http://127.0.0.1:48217/)** trong trình duyệt cùng máy. Giữ tiến trình preview chạy trong lúc dùng. Nếu cổng 48217 đang bận, chọn cổng khác và mở đúng URL Vite in ra. Bộ nhớ ngoại tuyến gắn với từng địa chỉ và cổng.
 
 1. Bấm **Bắt đầu** để mở khung ngắm. Nút **Quay lại** đưa bạn về màn hình đầu. Ở mốc này trình duyệt chưa yêu cầu quyền camera hay micro.
 2. Nhấn **D** hoặc chọn **Thông tin studio** để xem phiên bản MediaPipe, số tệp đã chuẩn bị và trạng thái ngoại tuyến. Nhấn **Esc** để đóng.
@@ -34,7 +34,7 @@ Khi sửa mã, dùng `npm run dev` và mở URL Vite in ra. Service worker chỉ
 | `npm test`             | Chạy Vitest cho luồng mở sân khấu, trạng thái ngoại tuyến và tính toàn vẹn của tài nguyên.        |
 | `npm run build`        | Kiểm tra type, tạo bản production và sinh service worker từ danh sách tệp thực tế.                |
 | `npm run preview`      | Phục vụ bản đã build trên máy.                                                                    |
-| `npm run test:offline` | Sau khi build, chạy Playwright với Chrome đã cài. Test tự mở hoặc dùng lại preview tại cổng 4173. |
+| `npm run test:offline` | Sau khi build, chạy Playwright với Chrome đã cài. Test tự mở hoặc dùng lại preview tại cổng 48217. |
 | `npm run format`       | Định dạng mã bằng Prettier.                                                                       |
 
 Để chạy cùng bài kiểm tra trên Edge trong một phiên PowerShell:
