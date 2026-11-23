@@ -1,0 +1,359 @@
+@import 'tailwindcss';
+@theme {
+  --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;
+  --color-booth: var(--mb-accent);
+}
+:root {
+  font-family: var(--font-sans);
+  color: #302438;
+  background: #faf7f4;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+button:focus-visible {
+  outline: 3px solid #4237ab;
+  outline-offset: 5px;
+}
+.studio {
+  --mb-bg: #faf7f4;
+  --mb-surface: #fff7eb;
+  --mb-text: #32253c;
+  --mb-accent: #ffb5d8;
+  --mb-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  max-width: 1920px;
+  margin: auto;
+  padding: 0 clamp(12px, 2.1vw, 40px);
+}
+.mast,
+.mast > *,
+footer,
+footer > span,
+.stage-bar,
+.stage-bar span,
+.stage-foot,
+.stage-foot span,
+.info,
+.primary,
+.dialog-head,
+.round {
+  display: flex;
+  align-items: center;
+}
+.mast {
+  min-height: 70px;
+  justify-content: space-between;
+  gap: 12px;
+}
+.brand {
+  gap: 10px;
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: -0.065em;
+}
+.brand b {
+  color: #815b91;
+}
+.brand img {
+  transform: rotate(-5deg);
+}
+.info {
+  background: white;
+  border: 1px solid #d6cdd6;
+  border-radius: 22px;
+  padding: 8px 13px;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.info:hover,
+.round:hover {
+  background: #f8e9f0;
+}
+kbd {
+  border: 1px solid #d4c7d2;
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 0.74rem;
+}
+.stage {
+  flex: 1;
+  min-height: 450px;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  border: 2px solid var(--mb-text);
+  border-radius: var(--mb-radius);
+  overflow: hidden;
+  background: #d9c7f0;
+  box-shadow: 0 4px 0 var(--mb-text);
+}
+.stage-bar,
+.stage-foot {
+  justify-content: space-between;
+  padding: 15px clamp(18px, 2.1vw, 34px);
+  font-weight: 700;
+  font-size: 0.82rem;
+  gap: 14px;
+}
+.stage-bar span,
+.stage-foot span,
+footer > span {
+  gap: 8px;
+}
+.stage-bar {
+  border-bottom: 1px solid #65527552;
+  background: #e6d9f4;
+}
+.stage-foot {
+  color: #514264;
+}
+.frame {
+  margin: 14px 16px 0;
+  position: relative;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(ellipse at 76% 55%, #ffebe8 0%, transparent 48%),
+    radial-gradient(circle, #78628b35 0.8px, transparent 1px),
+    linear-gradient(120deg, #e4d4f5, #c8b3e6);
+  background-size:
+    auto,
+    9px 9px,
+    auto;
+  border-radius: 9px;
+}
+.corner {
+  position: absolute;
+  width: 25px;
+  height: 25px;
+  border: solid #6e5a7c;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.tl {
+  top: 8px;
+  left: 8px;
+  border-width: 2px 0 0 2px;
+}
+.tr {
+  top: 8px;
+  right: 8px;
+  border-width: 2px 2px 0 0;
+}
+.bl {
+  bottom: 8px;
+  left: 8px;
+  border-width: 0 0 2px 2px;
+}
+.br {
+  bottom: 8px;
+  right: 8px;
+  border-width: 0 2px 2px 0;
+}
+.welcome {
+  width: min(1150px, 93%);
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  align-items: center;
+  gap: 1vw;
+  padding: 24px 0;
+}
+.copy {
+  padding-left: 3vw;
+  z-index: 1;
+}
+.intro {
+  font-size: clamp(1rem, 1.4vw, 1.23rem);
+  font-weight: 700;
+  margin: 0 0 20px;
+  color: #574461;
+}
+h1 {
+  font-weight: 900;
+}
+.copy h1 {
+  font-size: clamp(3.3rem, 6.65vw, 7rem);
+  letter-spacing: -0.09em;
+  line-height: 0.99;
+  margin: 0;
+  color: #35273f;
+}
+.copy h1 em {
+  font-style: normal;
+  color: #fff4e6;
+  -webkit-text-stroke: 2px #382642;
+  paint-order: stroke fill;
+  text-shadow: 3px 4px #382642;
+}
+.copy h1 em span {
+  color: #fff597;
+  display: inline-block;
+  font-size: 0.5em;
+  vertical-align: top;
+  margin-left: 0.25em;
+}
+.primary {
+  border: 2px solid #33233d;
+  border-radius: 15px;
+  background: #ffaad0;
+  box-shadow: 3px 4px 0 #33233d;
+  font-weight: 900;
+  font-size: 1.05rem;
+  padding: 14px 24px;
+  gap: 11px;
+  margin-top: 32px;
+}
+.primary:hover {
+  background: #ffc1dc;
+}
+.primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 2px 0 #33233d;
+}
+.illustration {
+  width: 109%;
+  max-width: none;
+  justify-self: center;
+}
+.session {
+  text-align: center;
+  max-width: 490px;
+  padding: 40px 20px;
+}
+.session > svg {
+  margin: auto;
+}
+.session h1 {
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  letter-spacing: -0.06em;
+  margin: 20px 0 8px;
+}
+.session .primary {
+  margin: 26px auto 0;
+}
+footer {
+  min-height: 53px;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: #584e5f;
+}
+footer svg {
+  flex-shrink: 0;
+}
+dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(410px, 92vw);
+  padding: 22px;
+  border: 2px solid #382642;
+  border-radius: 18px;
+  background: #fff9f1;
+  color: #382642;
+  box-shadow: 5px 6px #382642;
+}
+dialog::backdrop {
+  background: #30233b70;
+}
+.dialog-head {
+  justify-content: space-between;
+  gap: 10px;
+}
+.dialog-head h2 {
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+.round {
+  border: 1px solid #cbbece;
+  border-radius: 50%;
+  padding: 6px;
+  background: white;
+}
+dl {
+  margin: 15px 0 0;
+}
+dt {
+  margin: 12px 0 4px;
+  color: #625368;
+  font-size: 0.84rem;
+}
+dd {
+  font-weight: 700;
+  margin: 0;
+}
+.recovery {
+  padding: 2rem;
+}
+@media (max-width: 700px) {
+  .mast {
+    min-height: 60px;
+  }
+  .info span,
+  .info kbd {
+    display: none;
+  }
+  .info {
+    padding: 9px;
+  }
+  .stage {
+    min-height: 520px;
+  }
+  .welcome {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 24px 0;
+  }
+  .copy {
+    text-align: center;
+    padding: 0;
+  }
+  .intro {
+    font-size: 0.94rem;
+    margin-bottom: 12px;
+  }
+  .copy h1 {
+    font-size: clamp(3.1rem, 11vw, 4.8rem);
+  }
+  .primary {
+    margin: 19px auto 0;
+    padding: 11px 24px;
+  }
+  .illustration {
+    width: min(71vw, 290px);
+    grid-row: 1;
+  }
+  .stage-bar,
+  .stage-foot {
+    padding: 10px 14px;
+  }
+  .frame {
+    margin: 8px 8px 0;
+  }
+  .stage-foot {
+    font-size: 0.75rem;
+  }
+  footer {
+    padding: 12px 3px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .corner {
+    width: 18px;
+    height: 18px;
+  }
+}

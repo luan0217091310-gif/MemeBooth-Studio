@@ -1,0 +1,6 @@
+dist
+node_modules
+public/mediapipe
+.local
+package-lock.json
+test-results
