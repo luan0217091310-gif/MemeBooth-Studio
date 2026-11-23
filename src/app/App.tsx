@@ -1,33 +1,68 @@
-import { useEffect } from 'react'
+import { useEffect, type CSSProperties } from 'react'
 import {
-  Aperture,
-  Camera,
-  CameraOff,
+  ArrowLeft,
   CircleHelp,
   LockKeyhole,
-  Maximize,
   Power,
-  ScanLine,
   ShieldCheck,
 } from 'lucide-react'
 import { DebugPanel } from '@/components/common/DebugPanel'
-import { CameraStage } from '@/components/stage/CameraStage'
-import { CreativeToolbar } from '@/components/controls/CreativeToolbar'
 import { Toast } from '@/components/common/Toast'
-import { useScene } from '@/store/scene'
-import { useStage } from '@/store/stage'
+import { QuickBar } from '@/components/controls/CreativeToolbar'
+import { FloatingDock } from '@/components/controls/FloatingDock'
+import { SideDrawer } from '@/components/controls/SideDrawer'
+import { VibeChip } from '@/components/controls/VibePicker'
+import { CameraStage } from '@/components/stage/CameraStage'
+import { CoachMarks, StageHints } from '@/components/stage/CoachMarks'
+import { GesturePills } from '@/components/stage/GesturePills'
 import { artwork } from '@/config/assets'
 import { unlockAudio } from '@/core/audio/engine'
+import { useScene } from '@/store/scene'
 import { useSession } from '@/store/session'
+import { useStage } from '@/store/stage'
+import { useUi } from '@/store/ui'
+import { useVibe } from '@/store/vibe'
 import { vi } from '@/i18n/vi'
+
+function ModeChip() {
+  const mode = useScene((s) => s.mode)
+  const setMode = useScene((s) => s.setMode)
+  return (
+    <div className="mode-chip" role="radiogroup" aria-label={vi.draw.mode}>
+      {(['draw', 'meme'] as const).map((m) => (
+        <button
+          key={m}
+          role="radio"
+          aria-checked={mode === m}
+          className={mode === m ? 'on' : ''}
+          data-dwell
+          onClick={() => setMode(m)}
+        >
+          {m === 'draw' ? vi.draw.modeDraw : vi.draw.modeMeme}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function FpsBadge() {
+  const fps = useStage((s) => s.perf.fps)
+  const inf = useStage((s) => s.perf.inferenceFps)
+  return (
+    <span className="fps" aria-label={vi.header.fps}>
+      {fps.toFixed(0)} / {inf} fps
+    </span>
+  )
+}
 
 export function App() {
   const { started, setStarted, debug, setDebug, offline } = useSession()
-  const camera = useStage((st) => st.camera)
+  const preset = useVibe((s) => s.preset)
   useEffect(() => {
     const handle = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && useSession.getState().debug) {
-        setDebug(false)
+      if (event.key === 'Escape') {
+        if (useSession.getState().debug) setDebug(false)
+        else if (useUi.getState().drawer) useUi.getState().setDrawer(null)
         return
       }
       if (
@@ -43,18 +78,11 @@ export function App() {
         else useScene.getState().undo()
         return
       }
-      if (key === 'm' && !mod && !event.altKey && !event.repeat) {
+      if (mod || event.altKey || event.repeat) return
+      if (key === 'm') {
         const scene = useScene.getState()
         scene.setMode(scene.mode === 'draw' ? 'meme' : 'draw')
-        return
-      }
-      if (
-        event.key.toLowerCase() === 'd' &&
-        !event.repeat &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey
-      ) {
+      } else if (key === 'd') {
         event.preventDefault()
         setDebug(!useSession.getState().debug)
       }
@@ -62,53 +90,54 @@ export function App() {
     window.addEventListener('keydown', handle)
     return () => window.removeEventListener('keydown', handle)
   }, [setDebug])
+
   function start() {
+    // AudioContext must be created/resumed inside this user gesture.
     void unlockAudio().catch(() => undefined)
     setStarted(true)
   }
+
   return (
-    <main className="studio" data-vibe="kawaii">
+    <main
+      className={'studio ' + (started ? 'is-live' : 'is-home')}
+      data-vibe={preset.id}
+      style={preset.ui as CSSProperties}
+    >
       <header className="mast">
         <div className="brand">
-          <img width="39" height="39" src="./booth.svg" alt="" />
+          <img width="36" height="36" src="./booth.svg" alt="" />
           <span>
             MemeBooth <b>Studio</b>
           </span>
         </div>
-        <button
-          className="info"
-          onClick={() => setDebug(!debug)}
-          aria-label={vi.settings}
-        >
-          <CircleHelp size={19} />
-          <span>{vi.settings}</span>
-          <kbd>D</kbd>
-        </button>
-      </header>
-      <section
-        className={'stage ' + (started ? 'is-open' : '')}
-        aria-label={vi.stage}
-      >
-        <div className="stage-bar">
-          <span>
-            <Aperture size={16} />
-            {vi.stage}
-          </span>
-          <span>
-            {camera === 'live' ? <Camera size={16} /> : <CameraOff size={16} />}
-            {camera === 'live'
-              ? vi.camera.live
-              : camera === 'off'
-                ? vi.camera.off
-                : vi.cameraOff}
-          </span>
+        {started && (
+          <div className="mast-center">
+            <ModeChip />
+            <VibeChip />
+            {debug && <FpsBadge />}
+          </div>
+        )}
+        <div className="mast-right">
+          {started && (
+            <button className="info" onClick={() => setStarted(false)}>
+              <ArrowLeft size={18} />
+              <span>{vi.back}</span>
+            </button>
+          )}
+          <button
+            className="info"
+            onClick={() => setDebug(!debug)}
+            aria-label={vi.settings}
+          >
+            <CircleHelp size={19} />
+            <span>{vi.settings}</span>
+            <kbd>D</kbd>
+          </button>
         </div>
-        <div className="frame">
-          <i className="corner tl" />
-          <i className="corner tr" />
-          <i className="corner bl" />
-          <i className="corner br" />
-          {!started ? (
+      </header>
+      {!started ? (
+        <section className="stage home" aria-label={vi.stage}>
+          <div className="frame">
             <div className="welcome">
               <div className="copy">
                 <p className="intro">{vi.intro}</p>
@@ -124,38 +153,39 @@ export function App() {
                   <Power size={21} />
                   {vi.start}
                 </button>
+                <p className="privacy-line">
+                  <LockKeyhole size={15} />
+                  {vi.privacy}
+                </p>
               </div>
               <img className="illustration" src={artwork.booth} alt="" />
             </div>
-          ) : (
-            <div className="session-live">
-              <CameraStage />
-              <CreativeToolbar />
-              <Toast />
-              <button className="ghost back" onClick={() => setStarted(false)}>
-                {vi.back}
-              </button>
-            </div>
-          )}
-        </div>
-        <div className="stage-foot">
+          </div>
+        </section>
+      ) : (
+        <section className="stage live" aria-label={vi.stage}>
+          <CameraStage />
+          <QuickBar />
+          <SideDrawer />
+          <StageHints />
+          <GesturePills />
+          <FloatingDock />
+          <CoachMarks />
+          <Toast />
+        </section>
+      )}
+      {!started && (
+        <footer>
           <span>
-            <ScanLine size={16} />
-            {vi.preview}
+            <LockKeyhole size={16} />
+            {vi.privacy}
           </span>
-          <Maximize aria-hidden size={16} />
-        </div>
-      </section>
-      <footer>
-        <span>
-          <LockKeyhole size={16} />
-          {vi.privacy}
-        </span>
-        <span role="status">
-          <ShieldCheck size={17} />
-          {vi.offline[offline]}
-        </span>
-      </footer>
+          <span role="status">
+            <ShieldCheck size={17} />
+            {vi.offline[offline]}
+          </span>
+        </footer>
+      )}
       <DebugPanel />
     </main>
   )

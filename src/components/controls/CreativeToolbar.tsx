@@ -1,23 +1,12 @@
 import { useState } from 'react'
-import { Eraser, Pencil, Redo2, Smile, Trash2, Type, Undo2 } from 'lucide-react'
+import { Eraser, Pencil, Redo2, Trash2, Type, Undo2 } from 'lucide-react'
 import { getStageEngine } from '@/components/stage/CameraStage'
 import { brushOrder } from '@/core/canvas/brushes'
 import { STICKER_SIZE, stickerDataUrl, stickers } from '@/config/stickers'
 import { newId, useScene } from '@/store/scene'
+import { useVibe } from '@/store/vibe'
 import type { SceneItem, TextStyle } from '@/types'
 import { vi } from '@/i18n/vi'
-
-export const PALETTE = [
-  '#ff5fa2',
-  '#ffb5d8',
-  '#cdb4ff',
-  '#5ab8ff',
-  '#39ff14',
-  '#ffe600',
-  '#ff7a2f',
-  '#ffffff',
-  '#111111',
-]
 
 const WIDTHS = [0.005, 0.008, 0.013, 0.02]
 
@@ -27,7 +16,7 @@ type NewItem = SceneItem extends infer T
     : never
   : never
 
-function addItem(item: NewItem) {
+export function addItem(item: NewItem) {
   const { items, commit } = useScene.getState()
   const z = Math.max(0, ...items.map((i) => i.z)) + 1
   commit({ items: [...items, { ...item, id: newId('i'), z } as SceneItem] })
@@ -41,7 +30,7 @@ function spawnPoint() {
   }
 }
 
-function TextModal(props: { onClose(): void }) {
+export function TextModal(props: { onClose(): void }) {
   const [text, setText] = useState('')
   const [style, setStyle] = useState<TextStyle>('meme')
   const color = useScene((s) => s.color)
@@ -106,158 +95,147 @@ function TextModal(props: { onClose(): void }) {
   )
 }
 
-export function CreativeToolbar() {
+/** Always-visible quick actions (left): pen/eraser, undo/redo, clear. */
+export function QuickBar() {
   const s = useScene()
-  const [panel, setPanel] = useState<'none' | 'stickers' | 'text'>('none')
-  const toggle = (p: typeof panel) => setPanel(panel === p ? 'none' : p)
   return (
-    <>
-      <div className="mode-chip" role="radiogroup" aria-label={vi.draw.mode}>
-        {(['draw', 'meme'] as const).map((m) => (
+    <aside className="quickbar" aria-label={vi.draw.tools}>
+      <button
+        className={'tool ' + (s.tool === 'pen' ? 'on' : '')}
+        aria-label={vi.draw.pen}
+        aria-pressed={s.tool === 'pen'}
+        onClick={() => s.setTool('pen')}
+      >
+        <Pencil size={18} />
+      </button>
+      <button
+        className={'tool ' + (s.tool === 'eraser' ? 'on' : '')}
+        aria-label={vi.draw.eraser}
+        aria-pressed={s.tool === 'eraser'}
+        onClick={() => s.setTool('eraser')}
+      >
+        <Eraser size={18} />
+      </button>
+      <span className="sep" />
+      <button
+        className="tool"
+        aria-label={vi.draw.undo}
+        disabled={!s.past.length}
+        onClick={s.undo}
+      >
+        <Undo2 size={18} />
+      </button>
+      <button
+        className="tool"
+        aria-label={vi.draw.redo}
+        disabled={!s.future.length}
+        onClick={s.redo}
+      >
+        <Redo2 size={18} />
+      </button>
+      <button
+        className="tool"
+        aria-label={vi.draw.clear}
+        disabled={!s.strokes.length && !s.items.length}
+        onClick={() => getStageEngine()?.controller.clearBoard()}
+      >
+        <Trash2 size={18} />
+      </button>
+    </aside>
+  )
+}
+
+export function BrushPanel() {
+  const s = useScene()
+  const palette = useVibe((v) => v.preset.brush.palette)
+  return (
+    <div className="panel-body">
+      <h3 className="panel-sub">{vi.draw.brush}</h3>
+      <div className="brush-grid">
+        {brushOrder.map((id) => (
           <button
-            key={m}
-            role="radio"
-            aria-checked={s.mode === m}
-            className={s.mode === m ? 'on' : ''}
-            onClick={() => s.setMode(m)}
+            key={id}
+            className={
+              'brush-tile ' + (s.brushId === id && s.tool === 'pen' ? 'on' : '')
+            }
+            aria-pressed={s.brushId === id && s.tool === 'pen'}
+            onClick={() => s.setBrush(id)}
           >
-            {m === 'draw' ? vi.draw.modeDraw : vi.draw.modeMeme}
+            <i className="brush" data-brush={id} />
+            <span>{vi.draw.brushes[id]}</span>
           </button>
         ))}
       </div>
-      <aside className="toolbar" aria-label={vi.draw.tools}>
-        <div className="tool-group">
+      <h3 className="panel-sub">{vi.draw.color}</h3>
+      <div className="swatches">
+        {palette.map((c) => (
           <button
-            className={'tool ' + (s.tool === 'pen' ? 'on' : '')}
-            aria-label={vi.draw.pen}
-            aria-pressed={s.tool === 'pen'}
-            onClick={() => s.setTool('pen')}
-          >
-            <Pencil size={18} />
-          </button>
+            key={c}
+            className={'swatch ' + (s.color === c ? 'on' : '')}
+            style={{ background: c }}
+            aria-label={vi.draw.color + ' ' + c}
+            aria-pressed={s.color === c}
+            onClick={() => s.setColor(c)}
+          />
+        ))}
+        <label className="swatch custom" aria-label={vi.draw.customColor}>
+          <input
+            type="color"
+            value={s.color}
+            onChange={(e) => s.setColor(e.target.value)}
+          />
+        </label>
+      </div>
+      <h3 className="panel-sub">{vi.draw.size}</h3>
+      <div className="swatches">
+        {WIDTHS.map((w) => (
           <button
-            className={'tool ' + (s.tool === 'eraser' ? 'on' : '')}
-            aria-label={vi.draw.eraser}
-            aria-pressed={s.tool === 'eraser'}
-            onClick={() => s.setTool('eraser')}
+            key={w}
+            className={'tool size ' + (s.width === w ? 'on' : '')}
+            aria-label={vi.draw.size + ' ' + Math.round(w * 1000)}
+            aria-pressed={s.width === w}
+            onClick={() => s.setWidth(w)}
           >
-            <Eraser size={18} />
+            <i style={{ width: 4 + w * 700, height: 4 + w * 700 }} />
           </button>
-        </div>
-        <div className="tool-group brushes">
-          {brushOrder.map((id) => (
-            <button
-              key={id}
-              className={
-                'brush ' + (s.brushId === id && s.tool === 'pen' ? 'on' : '')
-              }
-              data-brush={id}
-              aria-label={vi.draw.brushes[id]}
-              title={vi.draw.brushes[id]}
-              aria-pressed={s.brushId === id}
-              onClick={() => s.setBrush(id)}
-            />
-          ))}
-        </div>
-        <div className="tool-group colors">
-          {PALETTE.map((c) => (
-            <button
-              key={c}
-              className={'swatch ' + (s.color === c ? 'on' : '')}
-              style={{ background: c }}
-              aria-label={vi.draw.color + ' ' + c}
-              aria-pressed={s.color === c}
-              onClick={() => s.setColor(c)}
-            />
-          ))}
-        </div>
-        <div className="tool-group">
-          {WIDTHS.map((w) => (
-            <button
-              key={w}
-              className={'tool size ' + (s.width === w ? 'on' : '')}
-              aria-label={vi.draw.size + ' ' + w}
-              aria-pressed={s.width === w}
-              onClick={() => s.setWidth(w)}
-            >
-              <i style={{ width: 4 + w * 700, height: 4 + w * 700 }} />
-            </button>
-          ))}
-        </div>
-        <div className="tool-group">
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function StickerPanel() {
+  const [textOpen, setTextOpen] = useState(false)
+  return (
+    <div className="panel-body">
+      <button className="primary wide" onClick={() => setTextOpen(true)}>
+        <Type size={18} />
+        {vi.draw.text}
+      </button>
+      <h3 className="panel-sub">{vi.draw.stickers}</h3>
+      <div className="sticker-grid" role="list">
+        {stickers.map((st) => (
           <button
-            className={'tool ' + (panel === 'stickers' ? 'on' : '')}
-            aria-label={vi.draw.stickers}
-            aria-expanded={panel === 'stickers'}
-            onClick={() => toggle('stickers')}
+            key={st.id}
+            role="listitem"
+            aria-label={st.name}
+            title={st.name}
+            onClick={() =>
+              addItem({
+                kind: 'sticker',
+                stickerId: st.id,
+                ...spawnPoint(),
+                scale: 0.12 / STICKER_SIZE,
+                rotation: 0,
+              })
+            }
           >
-            <Smile size={18} />
+            <img src={stickerDataUrl(st.id)} alt="" width={40} height={40} />
           </button>
-          <button
-            className="tool"
-            aria-label={vi.draw.text}
-            onClick={() => toggle('text')}
-          >
-            <Type size={18} />
-          </button>
-        </div>
-        <div className="tool-group">
-          <button
-            className="tool"
-            aria-label={vi.draw.undo}
-            disabled={!s.past.length}
-            onClick={s.undo}
-          >
-            <Undo2 size={18} />
-          </button>
-          <button
-            className="tool"
-            aria-label={vi.draw.redo}
-            disabled={!s.future.length}
-            onClick={s.redo}
-          >
-            <Redo2 size={18} />
-          </button>
-          <button
-            className="tool"
-            aria-label={vi.draw.clear}
-            disabled={!s.strokes.length && !s.items.length}
-            onClick={() => getStageEngine()?.controller.clearBoard()}
-          >
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </aside>
-      {panel === 'stickers' && (
-        <div
-          className="sticker-panel"
-          role="listbox"
-          aria-label={vi.draw.stickers}
-        >
-          {stickers.map((st) => (
-            <button
-              key={st.id}
-              role="option"
-              aria-selected={false}
-              aria-label={st.name}
-              title={st.name}
-              onClick={() =>
-                addItem({
-                  kind: 'sticker',
-                  stickerId: st.id,
-                  ...spawnPoint(),
-                  scale: 0.12 / STICKER_SIZE,
-                  rotation: 0,
-                })
-              }
-            >
-              <img src={stickerDataUrl(st.id)} alt="" width={40} height={40} />
-            </button>
-          ))}
-        </div>
-      )}
-      {panel === 'text' && <TextModal onClose={() => setPanel('none')} />}
-      <p className="gesture-hint">{vi.draw.hint}</p>
-    </>
+        ))}
+      </div>
+      <p className="panel-note">{vi.draw.stickerNote}</p>
+      {textOpen && <TextModal onClose={() => setTextOpen(false)} />}
+    </div>
   )
 }

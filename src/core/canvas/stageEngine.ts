@@ -16,7 +16,9 @@ import { MicAnalyser } from '@/core/audio/micAnalyser'
 import { setMuted } from '@/core/audio/engine'
 import { useFx } from '@/store/fx'
 import { useMemes } from '@/store/memes'
-import type { HandGestureId } from '@/types'
+import { useUi, type Hint } from '@/store/ui'
+import { onVibe } from '@/store/vibe'
+import type { HandGestureId, PerceptionSnapshot } from '@/types'
 import { FxEngine } from './fx'
 import { ArProps } from './props/arProps'
 import { CameraLayer } from './layers/cameraLayer'
@@ -25,7 +27,15 @@ import { CreativeLayer } from './layers/creativeLayer'
 import { FxLayer } from './layers/fxLayer'
 import { HudLayer } from './layers/hudLayer'
 import { RenderLoop } from './renderLoop'
-import { createViewport, fromPixel, stageDpr, type Viewport } from './viewport'
+import {
+  createViewport,
+  fromPixel,
+  stageDpr,
+  toPixel,
+  type Viewport,
+} from './viewport'
+
+const DWELL_MS = 800
 
 export interface StageElements {
   root: HTMLElement
@@ -58,6 +68,15 @@ export class StageEngine {
   private pulseV = 0
   private shakeApplied = false
   private comboScores: Record<string, number> = {}
+  private vibeParticles = 'peak'
+  private unsubVibe: () => void
+  private dwellEl: Element | null = null
+  private dwellSince = 0
+  private dwellCooldown = 0
+  private dwellRing: { x: number; y: number; progress: number } | null = null
+  private lastLightCheck = 0
+  private lowLight = false
+  private lumaCanvas: HTMLCanvasElement | null = null
   private hudLayer: HudLayer
   private stream: MediaStream | null = null
   private vision?: VisionClient
@@ -95,6 +114,11 @@ export class StageEngine {
         renderer: this.cameraLayer.renderer,
       },
     })
+    // Vibe Sync: camera filter + particle set update instantly, no reload.
+    this.unsubVibe = onVibe((p) => {
+      this.cameraLayer.filter = p.filter
+      this.vibeParticles = p.particles[0] ?? 'peak'
+    })
     this.loop.start()
   }
 
@@ -105,7 +129,12 @@ export class StageEngine {
   /** Only events on the stage surface itself (not overlay UI) edit the scene. */
   private isStageTarget(e: Event): boolean {
     const t = e.target as Element | null
-    return !!t && (t === this.el.root || t.classList.contains('layer'))
+    return (
+      !!t &&
+      (t === this.el.root ||
+        t === this.el.layers ||
+        t.classList.contains('layer'))
+    )
   }
   private onPointerMove = (e: PointerEvent) => {
     const p = this.toDisplayPoint(e)
@@ -292,7 +321,7 @@ export class StageEngine {
     this.mic.sensitivity = fxState.micSensitivity
     if (this.mic.update(now) && fxState.soundReactive)
       this.fx.burst(
-        'peak',
+        this.vibeParticles,
         this.fx.anchor('head', { snapshot, view: this.view }),
         aspect,
       )
@@ -305,6 +334,11 @@ export class StageEngine {
     const space = spaceFor(this.view, this.dpr)
     if (this.props.active.length) this.props.update(snapshot.faces, space, now)
 
+    this.updateDwell(snapshot, now)
+    if (now - this.lastLightCheck > 1000) {
+      this.lastLightCheck = now
+      this.checkHints(video, snapshot.hands.length, now)
+    }
     this.cameraLayer.bloomEnabled = !this.loop.stats.degraded
     this.cameraLayer.draw(video, this.view, this.dpr, now)
     this.creativeLayer.active = this.controller.activeStrokes
@@ -334,6 +368,7 @@ export class StageEngine {
           ? { name: pendingMeme.name, progress: result.pending.progress }
           : null,
       micLevel: fxState.soundReactive ? this.mic.level : -1,
+      dwell: this.dwellRing,
     })
     if (now - this.lastPublish > 100) {
       this.lastPublish = now
@@ -350,6 +385,73 @@ export class StageEngine {
     this.el.layers.style.transform =
       'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)'
     this.shakeApplied = true
+  }
+
+  /**
+   * Dwell-click: hold a pointing finger over any [data-dwell] control for
+   * 0.8 s to click it, so the booth works without touching the mouse.
+   */
+  private updateDwell(snapshot: PerceptionSnapshot, now: number): void {
+    this.dwellRing = null
+    const hand = snapshot.hands.find((h) => (h.gestures.POINT ?? 0) >= 0.6)
+    const tip = hand?.landmarks[8]
+    if (!tip || now < this.dwellCooldown) {
+      this.dwellEl = null
+      return
+    }
+    const px = toPixel(this.view, tip)
+    const rect = this.el.root.getBoundingClientRect()
+    const target =
+      document
+        .elementFromPoint(rect.left + px.x, rect.top + px.y)
+        ?.closest('[data-dwell]') ?? null
+    if (target !== this.dwellEl) {
+      this.dwellEl = target
+      this.dwellSince = now
+    }
+    if (!target || (target as HTMLButtonElement).disabled) return
+    const progress = (now - this.dwellSince) / DWELL_MS
+    this.dwellRing = { x: px.x, y: px.y, progress: Math.min(1, progress) }
+    if (progress >= 1) {
+      ;(target as HTMLElement).click()
+      this.dwellEl = null
+      this.dwellCooldown = now + 1200
+    }
+  }
+
+  /** Low-light warning and "show your hand" hint (checked once a second). */
+  private checkHints(
+    video: HTMLVideoElement | null,
+    hands: number,
+    now: number,
+  ): void {
+    let hint: Hint = null
+    if (video && video.readyState >= 2) {
+      this.lumaCanvas ??= document.createElement('canvas')
+      const c = this.lumaCanvas
+      c.width = 16
+      c.height = 9
+      const ctx = c.getContext('2d', { willReadFrequently: true })
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, 16, 9)
+        const d = ctx.getImageData(0, 0, 16, 9).data
+        let sum = 0
+        for (let i = 0; i < d.length; i += 4)
+          sum += 0.299 * d[i]! + 0.587 * d[i + 1]! + 0.114 * d[i + 2]!
+        const luma = sum / (d.length / 4)
+        // Hysteresis so the banner does not flicker.
+        this.lowLight = this.lowLight ? luma < 60 : luma < 45
+      }
+      if (this.lowLight) hint = 'lowLight'
+      else if (
+        useScene.getState().mode === 'draw' &&
+        useStage.getState().vision === 'ready' &&
+        hands === 0 &&
+        this.tracker.handAge(now) > 5000
+      )
+        hint = 'showHand'
+    }
+    if (useUi.getState().hint !== hint) useUi.getState().setHint(hint)
   }
 
   /** Fires a meme manually (button / no-camera mode). */
@@ -425,6 +527,8 @@ export class StageEngine {
     this.resizeObserver?.disconnect()
     window.removeEventListener('resize', this.onWindowResize)
     this.controller.reset()
+    this.unsubVibe()
+    useUi.getState().setHint(null)
     this.mic.stop()
     this.fx.clear()
     this.el.root.removeEventListener('pointermove', this.onPointerMove)

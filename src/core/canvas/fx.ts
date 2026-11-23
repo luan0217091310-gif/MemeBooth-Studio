@@ -176,9 +176,14 @@ export class FxEngine {
     const face = ctx.snapshot.faces[0]?.landmarks
     const faceW = face ? Math.abs(face[454]!.x - face[234]!.x) : 0.2
     // Card no wider than ~1.1 face widths so it never hides most of the face.
-    const size = Math.min(0.2, Math.max(0.11, faceW * 1.1))
-    const pos = this.anchor(fx?.memeAt ?? 'head', ctx)
     const r = visibleRect(ctx.view)
+    // Also cap by the visible width (portrait phones only see the middle).
+    const size = Math.min(
+      0.2,
+      (r.x1 - r.x0) * 0.32,
+      Math.max(0.11, faceW * 1.1),
+    )
+    const pos = this.anchor(fx?.memeAt ?? 'head', ctx)
     const aspect = ctx.view.srcHeight / ctx.view.srcWidth
     const half = size / 2
     let x = Math.min(r.x1 - half, Math.max(r.x0 + half, pos.x))
@@ -199,6 +204,15 @@ export class FxEngine {
         )
         y = Math.max(r.y0 + half / aspect, (fy0 + fy1) / 2 - 0.05)
       }
+    }
+    // Step sideways until the card does not sit on a live card.
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const clash = this.cards.some(
+        (c) => Math.abs(c.x - x) < half && Math.abs(c.y - y) * aspect < half,
+      )
+      if (!clash) break
+      const step = (attempt % 2 ? -1 : 1) * size * 1.05 * (1 + (attempt >> 1))
+      x = Math.min(r.x1 - half, Math.max(r.x0 + half, pos.x + step))
     }
     if (this.cards.length >= MAX_CARDS) this.cards.shift()
     this.cards.push({
@@ -227,8 +241,13 @@ export class FxEngine {
   update(dt: number, now: number, aspect: number): void {
     this.emitters.update(dt, aspect)
     this.pool.update(dt)
-    this.cards = this.cards.filter((c) => now - c.born < c.life)
-    this.frames = this.frames.filter((f) => now - f.born < f.life)
+    // In-place removal: no per-frame array allocation.
+    for (let i = this.cards.length - 1; i >= 0; i--)
+      if (now - this.cards[i]!.born >= this.cards[i]!.life)
+        this.cards.splice(i, 1)
+    for (let i = this.frames.length - 1; i >= 0; i--)
+      if (now - this.frames[i]!.born >= this.frames[i]!.life)
+        this.frames.splice(i, 1)
     if (now < this.shakeUntil) {
       const k = (this.shakeUntil - now) / this.shakeMs
       this.shake.x = (Math.random() - 0.5) * 18 * k
@@ -328,12 +347,9 @@ export class FxEngine {
     ctx.translate(x, y)
     ctx.rotate(c.wobble * Math.sin(t * 6) * (this.reducedMotion ? 0 : 1))
     const img = c.meme ? memeImage(c.meme) : null
-    if (img) {
-      ctx.shadowColor = 'rgba(0,0,0,0.35)'
-      ctx.shadowBlur = size * 0.08
-      ctx.drawImage(img, -size / 2, -size / 2, size, size)
-      ctx.shadowColor = 'transparent'
-    }
+    // No shadowBlur here: it is a per-frame Gaussian blur and costs ~10 ms
+    // on software-rendered canvases when many cards are on screen.
+    if (img) ctx.drawImage(img, -size / 2, -size / 2, size, size)
     const cap = c.meme?.caption
     const fs = size * 0.2
     ctx.font = textFont(fs)
@@ -342,17 +358,19 @@ export class FxEngine {
     ctx.lineWidth = fs * 0.22
     ctx.strokeStyle = '#000'
     ctx.fillStyle = '#fff'
+    // Long captions are squeezed to 1.5x the card width (fillText maxWidth).
+    const maxW = size * 1.5
     if (cap?.top) {
       ctx.textBaseline = 'bottom'
       const tx = cap.top.toLocaleUpperCase('vi')
-      ctx.strokeText(tx, 0, -size / 2)
-      ctx.fillText(tx, 0, -size / 2)
+      ctx.strokeText(tx, 0, -size / 2, maxW)
+      ctx.fillText(tx, 0, -size / 2, maxW)
     }
     if (cap?.bottom) {
       ctx.textBaseline = 'top'
       const tx = cap.bottom.toLocaleUpperCase('vi')
-      ctx.strokeText(tx, 0, size / 2 + fs * 0.1)
-      ctx.fillText(tx, 0, size / 2 + fs * 0.1)
+      ctx.strokeText(tx, 0, size / 2 + fs * 0.1, maxW)
+      ctx.fillText(tx, 0, size / 2 + fs * 0.1, maxW)
     }
     ctx.restore()
   }

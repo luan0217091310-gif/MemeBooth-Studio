@@ -72,10 +72,10 @@ Các giai đoạn sau dùng một sân khấu chung. Theo thiết kế, worker A
 **Cách thêm nội dung theo lộ trình**
 
 - **Hình minh họa hiện tại** — đặt SVG gốc trong `src/assets/stickers/`, import URL vào `src/config/assets.ts` và dùng mục registry trong component. Bản build đưa hình vào cache ngoại tuyến.
-- **Meme ở giai đoạn 3** — định nghĩa `MemeDef` với hình, caption, `soundId` và `TriggerRule`. Rule có điều kiện, thời gian giữ, cooldown và độ ưu tiên. Đăng ký qua `config/memes.ts` sau khi combo engine được triển khai.
-- **Âm thanh ở giai đoạn 3** — thêm synth vào `core/audio/synths/`, đăng ký ID trong `soundRegistry.ts` và phát qua master bus chung cho loa và ghi hình. Dùng cùng ID trong định nghĩa meme.
-- **AR prop ở giai đoạn 3** — tạo SVG, khai báo điểm neo face mesh, offset và hệ số kích thước trong `config/props.ts`. Kiểm tra khi nghiêng đầu và khi khuôn mặt rời khung.
-- **Vibe ở giai đoạn 4** — thêm một `VibePreset` vào `config/vibes.ts` với token UI, tham số filter, cọ, hạt, âm thanh, khung ảnh và bìa sổ. Chuyển preset giữ nguyên scene.
+- **Meme** — thêm một `MemeDef` (hình SVG, caption, `soundId`, `TriggerRule` gồm điều kiện, `holdMs`, `windowMs`, cooldown, độ ưu tiên) vào `src/config/memes.ts`, và hiệu ứng tương ứng vào `src/config/effects.ts`. Meme tự xuất hiện trong Kho Meme.
+- **Âm thanh** — viết hàm synth trong `src/core/audio/synths/index.ts` và đăng ký ID trong `soundRegistry.ts`. Muốn dùng file thật thì gọi `registerBuffer(id, audioBuffer)` với cùng ID.
+- **AR prop** — thêm `{ anchor, offset, scaleFactor, aspect, svg }` vào `src/config/props.ts`. Kiểm tra khi nghiêng đầu, quay mặt và khi khuôn mặt rời khung.
+- **Vibe** — thêm một `VibePreset` vào `src/config/vibes.ts` (token UI `--mb-*`, tham số bộ lọc, cọ + bảng màu, hạt, gói âm thanh, khung ảnh, bìa sổ). Không cần sửa component.
 
 Các module được thêm khi đến giai đoạn tương ứng. React được giữ ở 18.3.1 theo yêu cầu tương thích với Photo Book. TypeScript ghim ở 6.0.3 trong dải hỗ trợ của typescript-eslint. Các phụ thuộc được ghim phiên bản chính xác.
 
@@ -86,8 +86,8 @@ Các module được thêm khi đến giai đoạn tương ứng. React được
 | 0         | Khung dự án, type, AI assets, ngoại tuyến, kiểm thử  | Đã triển khai và tự kiểm             |
 | 1         | Camera, shader, AI worker, làm mượt và HUD           | Đã triển khai, chờ đo trên máy thật  |
 | 2         | Vẽ trên không, tẩy vector, sticker và chữ            | Đã triển khai, chờ thử bằng tay thật |
-| 3         | Meme, combo, hạt, AR và âm thanh                     | Dự kiến                              |
-| 4         | Vibe Sync, onboarding và điều khiển                  | Dự kiến                              |
+| 3         | Meme, combo, hạt, AR và âm thanh                     | Đã triển khai, chờ thử bằng mặt/tay thật |
+| 4         | Vibe Sync, onboarding và điều khiển                  | Đã triển khai, chờ thử với người dùng mới |
 | 5         | Photobooth, Live Photo, GIF và video                 | Dự kiến                              |
 | 6         | IndexedDB, meme tự tạo, Photo Book và Highlight Reel | Dự kiến                              |
 | 7         | Pose Challenge, chia sẻ, QR và nghiệm thu toàn bộ    | Dự kiến                              |

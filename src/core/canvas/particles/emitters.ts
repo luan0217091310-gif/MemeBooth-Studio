@@ -20,7 +20,7 @@ export interface EmitterPreset {
 export const emitterPresets: Record<string, EmitterPreset> = {
   confetti: {
     sprites: ['confetti'],
-    count: 90,
+    count: 60,
     mode: 'burst',
     speed: [0.35, 0.9],
     life: [1.2, 2.2],
@@ -30,7 +30,7 @@ export const emitterPresets: Record<string, EmitterPreset> = {
   },
   hearts: {
     sprites: ['heart', 'heartPastel'],
-    count: 40,
+    count: 28,
     mode: 'burst',
     speed: [0.2, 0.5],
     life: [1.2, 2],
@@ -40,7 +40,7 @@ export const emitterPresets: Record<string, EmitterPreset> = {
   },
   heartRain: {
     sprites: ['heartPastel', 'heart'],
-    count: 120,
+    count: 80,
     mode: 'rain',
     speed: [0.15, 0.3],
     life: [2.5, 3.5],
@@ -51,7 +51,7 @@ export const emitterPresets: Record<string, EmitterPreset> = {
   },
   stars: {
     sprites: ['star', 'sparkle'],
-    count: 60,
+    count: 40,
     mode: 'burst',
     speed: [0.4, 1],
     life: [0.8, 1.5],
@@ -61,7 +61,7 @@ export const emitterPresets: Record<string, EmitterPreset> = {
   },
   sparkles: {
     sprites: ['sparkle'],
-    count: 35,
+    count: 26,
     mode: 'burst',
     speed: [0.1, 0.35],
     life: [0.6, 1.2],
@@ -71,7 +71,7 @@ export const emitterPresets: Record<string, EmitterPreset> = {
   },
   sweat: {
     sprites: ['drop'],
-    count: 70,
+    count: 48,
     mode: 'rain',
     speed: [0.4, 0.7],
     life: [1.5, 2.2],
@@ -81,7 +81,7 @@ export const emitterPresets: Record<string, EmitterPreset> = {
   },
   fire: {
     sprites: ['flame'],
-    count: 50,
+    count: 34,
     mode: 'fountain',
     speed: [0.3, 0.6],
     life: [0.6, 1.1],
@@ -130,7 +130,7 @@ export const emitterPresets: Record<string, EmitterPreset> = {
   },
   rainbow: {
     sprites: ['confetti'],
-    count: 160,
+    count: 100,
     mode: 'spray',
     speed: [0.6, 1.1],
     life: [0.7, 1.2],
@@ -160,7 +160,7 @@ export const emitterPresets: Record<string, EmitterPreset> = {
   },
   pixels: {
     sprites: ['pixel', 'pixelPurple'],
-    count: 60,
+    count: 40,
     mode: 'burst',
     speed: [0.3, 0.8],
     life: [0.6, 1.2],

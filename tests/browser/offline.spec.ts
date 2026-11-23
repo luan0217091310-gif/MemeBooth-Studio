@@ -27,11 +27,14 @@ test('a fresh browser can reopen the studio, debug panel and both models offline
   await context.setOffline(true)
   await page.reload()
   await page.getByRole('button', { name: vi.start }).click()
-  await expect(page.getByRole('heading', { name: vi.ready })).toBeVisible()
+  await expect(
+    page.getByRole('navigation', { name: vi.drawer.label }),
+  ).toBeVisible()
+  const debug = page.getByRole('dialog', { name: vi.backstage })
   await page.keyboard.press('d')
-  await expect(page.getByRole('dialog')).toContainText('MediaPipe')
+  await expect(debug).toContainText('MediaPipe')
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('dialog')).toBeHidden()
+  await expect(debug).toBeHidden()
   const verified = await page.evaluate(async () => {
     const { files } = (await (
       await fetch('./mediapipe/manifest.json')

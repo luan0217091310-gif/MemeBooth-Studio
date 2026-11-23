@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { getStageEngine } from '@/components/stage/CameraStage'
-import { smoothingConfig } from '@/config/gestures'
+import { faceConfig, gestureConfig, smoothingConfig } from '@/config/gestures'
 import { useSession } from '@/store/session'
 import { useStage } from '@/store/stage'
 import { vi } from '@/i18n/vi'
@@ -45,7 +45,7 @@ function Tuning() {
   }, [minCutoff, beta])
   return (
     <fieldset className="tuning">
-      <label>
+      <label className="inline">
         <input
           type="checkbox"
           checked={mirror}
@@ -79,6 +79,124 @@ function Tuning() {
         />
       </label>
     </fieldset>
+  )
+}
+
+const BLENDSHAPES = [
+  'eyeBlinkLeft',
+  'eyeBlinkRight',
+  'jawOpen',
+  'mouthSmileLeft',
+  'mouthSmileRight',
+  'mouthPucker',
+  'browInnerUp',
+  'cheekPuff',
+]
+
+function LiveValues() {
+  const live = useStage((s) => s.live)
+  const row = (k: string, v: number | undefined) => (
+    <span key={k} style={{ display: 'contents' }}>
+      <span>{k}</span>
+      <span>{(v ?? 0).toFixed(2)}</span>
+    </span>
+  )
+  return (
+    <details className="tuning">
+      <summary>{vi.debugLive.title}</summary>
+      <b>{vi.debugLive.blendshapes}</b>
+      <div className="live-table">
+        {BLENDSHAPES.map((k) => row(k, live.blendshapes[k]))}
+      </div>
+      <b>{vi.debugLive.derived}</b>
+      <div className="live-table">
+        {Object.entries(live.derived).map(([k, v]) => row(k, v))}
+      </div>
+      <b>{vi.debugLive.triggers}</b>
+      <div className="live-table">
+        {Object.entries(live.scores).map(([k, v]) => row(k, v))}
+      </div>
+      <span>
+        {vi.debugLive.particles}: {live.particles}
+      </span>
+    </details>
+  )
+}
+
+/** Live threshold sliders (mutate the shared config objects in place). */
+function Thresholds() {
+  const [, force] = useState(0)
+  const slider = (
+    label: string,
+    get: () => number,
+    put: (v: number) => void,
+    min = 0,
+    max = 1,
+  ) => (
+    <label key={label}>
+      {label} {get().toFixed(2)}
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={0.01}
+        value={get()}
+        onChange={(e) => {
+          put(Number(e.target.value))
+          force((n) => n + 1)
+        }}
+      />
+    </label>
+  )
+  return (
+    <details className="tuning">
+      <summary>{vi.debugLive.thresholds}</summary>
+      {slider(
+        'PINCH enter',
+        () => gestureConfig.pinchEnter,
+        (v) => (gestureConfig.pinchEnter = v),
+      )}
+      {slider(
+        'PINCH exit',
+        () => gestureConfig.pinchExit,
+        (v) => (gestureConfig.pinchExit = v),
+      )}
+      {slider(
+        'Gesture active',
+        () => gestureConfig.activeScore,
+        (v) => (gestureConfig.activeScore = v),
+      )}
+      {slider(
+        'MOUTH_OPEN enter',
+        () => faceConfig.mouthOpen.enter,
+        (v) => (faceConfig.mouthOpen.enter = v),
+      )}
+      {slider(
+        'SMILE enter',
+        () => faceConfig.smile.enter,
+        (v) => (faceConfig.smile.enter = v),
+      )}
+      {slider(
+        'PUCKER enter',
+        () => faceConfig.pucker.enter,
+        (v) => (faceConfig.pucker.enter = v),
+      )}
+      {slider(
+        'BROW_UP enter',
+        () => faceConfig.browUp.enter,
+        (v) => (faceConfig.browUp.enter = v),
+      )}
+      {slider(
+        'CHEEK_PUFF enter',
+        () => faceConfig.cheekPuff.enter,
+        (v) => (faceConfig.cheekPuff.enter = v),
+      )}
+      {slider(
+        'WINK diff',
+        () => faceConfig.winkDiff,
+        (v) => (faceConfig.winkDiff = v),
+      )}
+    </details>
   )
 }
 
@@ -135,7 +253,7 @@ export function DebugPanel() {
       </div>
       <dl>
         <dt>{vi.release}</dt>
-        <dd>0.2 · {vi.milestone}</dd>
+        <dd>0.4 · {vi.milestone}</dd>
         <dt>{vi.model}</dt>
         <dd>{assets}</dd>
         <dt>{vi.offlineLabel}</dt>
@@ -143,6 +261,8 @@ export function DebugPanel() {
         {debug && <PerfReadout />}
       </dl>
       {debug && <Tuning />}
+      {debug && <LiveValues />}
+      {debug && <Thresholds />}
       {offline === 'unavailable' && <p>{vi.offlineTip}</p>}
     </dialog>
   )

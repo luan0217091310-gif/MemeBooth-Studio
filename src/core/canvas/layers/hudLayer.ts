@@ -43,6 +43,8 @@ export interface HudInput {
   pending: { name: string; progress: number } | null
   /** Mic level 0..1, or -1 when sound-reactive is off. */
   micLevel: number
+  /** Dwell-click progress at a stage-pixel position. */
+  dwell: { x: number; y: number; progress: number } | null
 }
 
 /**
@@ -135,6 +137,27 @@ export class HudLayer {
       this.trash(ctx, view, input.trashSize, input.trashInset, hud.trash.hot)
     if (input.pending) this.pending(ctx, view, input.pending)
     if (input.micLevel >= 0) this.micBar(ctx, view, input.micLevel)
+    if (input.dwell) {
+      const d = input.dwell
+      ctx.save()
+      ctx.lineWidth = 5
+      ctx.lineCap = 'round'
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'
+      ctx.beginPath()
+      ctx.arc(d.x, d.y, 24, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.strokeStyle = '#ff4fd8'
+      ctx.beginPath()
+      ctx.arc(
+        d.x,
+        d.y,
+        24,
+        -Math.PI / 2,
+        -Math.PI / 2 + d.progress * Math.PI * 2,
+      )
+      ctx.stroke()
+      ctx.restore()
+    }
     for (const c of hud.cursors)
       this.cursor(ctx, toPixel(view, c.pos, tmpA), view, c, hud.eraserRadius)
   }
