@@ -24,18 +24,18 @@ Khi sửa mã, dùng `npm run dev` và mở URL Vite in ra. Service worker chỉ
 
 ## Các lệnh của dự án
 
-| Lệnh                   | Công việc                                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `npm ci`               | Cài đúng lockfile, sau đó tự chạy bước chuẩn bị tài nguyên.                                       |
-| `npm run fetch-assets` | Kiểm tra và khôi phục model, đối chiếu WASM với SDK đã cài, ghi lại manifest.                     |
-| `npm run dev`          | Chạy Vite với cập nhật nóng.                                                                      |
-| `npm run typecheck`    | Kiểm tra TypeScript strict và truy cập mảng với `noUncheckedIndexedAccess`.                       |
-| `npm run lint`         | Chạy ESLint trên mã ứng dụng, script và test.                                                     |
-| `npm test`             | Chạy Vitest cho luồng mở sân khấu, trạng thái ngoại tuyến và tính toàn vẹn của tài nguyên.        |
-| `npm run build`        | Kiểm tra type, tạo bản production và sinh service worker từ danh sách tệp thực tế.                |
-| `npm run preview`      | Phục vụ bản đã build trên máy.                                                                    |
+| Lệnh                   | Công việc                                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| `npm ci`               | Cài đúng lockfile, sau đó tự chạy bước chuẩn bị tài nguyên.                                        |
+| `npm run fetch-assets` | Kiểm tra và khôi phục model, đối chiếu WASM với SDK đã cài, ghi lại manifest.                      |
+| `npm run dev`          | Chạy Vite với cập nhật nóng.                                                                       |
+| `npm run typecheck`    | Kiểm tra TypeScript strict và truy cập mảng với `noUncheckedIndexedAccess`.                        |
+| `npm run lint`         | Chạy ESLint trên mã ứng dụng, script và test.                                                      |
+| `npm test`             | Chạy Vitest cho luồng mở sân khấu, trạng thái ngoại tuyến và tính toàn vẹn của tài nguyên.         |
+| `npm run build`        | Kiểm tra type, tạo bản production và sinh service worker từ danh sách tệp thực tế.                 |
+| `npm run preview`      | Phục vụ bản đã build trên máy.                                                                     |
 | `npm run test:offline` | Sau khi build, chạy Playwright với Chrome đã cài. Test tự mở hoặc dùng lại preview tại cổng 48217. |
-| `npm run format`       | Định dạng mã bằng Prettier.                                                                       |
+| `npm run format`       | Định dạng mã bằng Prettier.                                                                        |
 
 Để chạy cùng bài kiểm tra trên Edge trong một phiên PowerShell:
 
@@ -81,16 +81,16 @@ Các module được thêm khi đến giai đoạn tương ứng. React được
 
 ## Lộ trình và nghiệm thu
 
-| Giai đoạn | Phạm vi                                              | Trạng thái               |
-| --------- | ---------------------------------------------------- | ------------------------ |
-| 0         | Khung dự án, type, AI assets, ngoại tuyến, kiểm thử  | Đã triển khai và tự kiểm |
-| 1         | Camera, shader, AI worker, làm mượt và HUD           | Chờ duyệt mốc 0          |
-| 2         | Vẽ trên không, tẩy vector, sticker và chữ            | Dự kiến                  |
-| 3         | Meme, combo, hạt, AR và âm thanh                     | Dự kiến                  |
-| 4         | Vibe Sync, onboarding và điều khiển                  | Dự kiến                  |
-| 5         | Photobooth, Live Photo, GIF và video                 | Dự kiến                  |
-| 6         | IndexedDB, meme tự tạo, Photo Book và Highlight Reel | Dự kiến                  |
-| 7         | Pose Challenge, chia sẻ, QR và nghiệm thu toàn bộ    | Dự kiến                  |
+| Giai đoạn | Phạm vi                                              | Trạng thái                          |
+| --------- | ---------------------------------------------------- | ----------------------------------- |
+| 0         | Khung dự án, type, AI assets, ngoại tuyến, kiểm thử  | Đã triển khai và tự kiểm            |
+| 1         | Camera, shader, AI worker, làm mượt và HUD           | Đã triển khai, chờ đo trên máy thật |
+| 2         | Vẽ trên không, tẩy vector, sticker và chữ            | Dự kiến                             |
+| 3         | Meme, combo, hạt, AR và âm thanh                     | Dự kiến                             |
+| 4         | Vibe Sync, onboarding và điều khiển                  | Dự kiến                             |
+| 5         | Photobooth, Live Photo, GIF và video                 | Dự kiến                             |
+| 6         | IndexedDB, meme tự tạo, Photo Book và Highlight Reel | Dự kiến                             |
+| 7         | Pose Challenge, chia sẻ, QR và nghiệm thu toàn bộ    | Dự kiến                             |
 
 Mốc 0 đạt typecheck, lint, 3 bài unit test và build. JavaScript ban đầu **52,28 kB gzip** theo Vite. Bản build đưa **23 tệp** vào danh sách dùng ngoại tuyến. Bài kiểm tra trình duyệt ngắt mạng, tải lại, mở sân khấu và bảng thông tin, đọc lại 6 tệp AI, đối chiếu SHA-256 và kiểm tra các request lỗi hoặc ra ngoài origin. [Kết quả theo trình duyệt](docs/browser-matrix.md)
 

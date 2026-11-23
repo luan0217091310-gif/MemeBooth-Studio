@@ -357,3 +357,149 @@ dd {
     height: 18px;
   }
 }
+
+/* Phase 1: live camera stage */
+.session-live {
+  position: absolute;
+  inset: 0;
+}
+.camera-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 9px;
+  background: #291f33;
+  touch-action: none;
+  cursor: none;
+}
+.camera-video {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid #33233d;
+  border-radius: 13px;
+  background: #fff9f1;
+  font-weight: 700;
+  padding: 10px 16px;
+}
+.ghost:hover {
+  background: #f8e9f0;
+}
+.back {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+}
+.stage-note {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: #fff9f1e6;
+  font-weight: 700;
+}
+.stage-card {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  z-index: 4;
+  width: min(460px, 90%);
+  height: fit-content;
+  padding: 24px;
+  border: 2px solid #382642;
+  border-radius: 18px;
+  background: #fff9f1;
+  box-shadow: 5px 6px #382642;
+  text-align: center;
+  cursor: default;
+}
+.stage-card > svg {
+  margin: auto;
+}
+.stage-card h2 {
+  margin: 12px 0 6px;
+  font-weight: 900;
+}
+.stage-card .hint {
+  font-size: 0.85rem;
+  color: #584e5f;
+}
+.stage-card.compact {
+  inset: auto 0 20px;
+}
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.card-actions .primary {
+  margin: 0;
+}
+.loading-pill {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: grid;
+  gap: 6px;
+  width: min(420px, 90%);
+  padding: 12px 16px;
+  border: 2px solid #382642;
+  border-radius: 16px;
+  background: #fff9f1f2;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: default;
+}
+.loading-pill progress {
+  width: 100%;
+  accent-color: #ff4fd8;
+}
+.loading-pill small {
+  font-weight: 400;
+}
+dialog.debug {
+  margin: 80px 16px auto auto;
+  max-height: calc(100svh - 100px);
+  overflow: auto;
+  z-index: 10;
+}
+.tuning {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  border: 1px solid #d6cdd6;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.85rem;
+}
+.tuning label {
+  display: grid;
+  gap: 4px;
+}
+.tuning label:first-child {
+  display: flex;
+  gap: 8px;
+}

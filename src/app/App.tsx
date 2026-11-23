@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import {
   Aperture,
+  Camera,
   CameraOff,
   CircleHelp,
-  Focus,
   LockKeyhole,
   Maximize,
   Power,
@@ -11,6 +11,8 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { DebugPanel } from '@/components/common/DebugPanel'
+import { CameraStage } from '@/components/stage/CameraStage'
+import { useStage } from '@/store/stage'
 import { artwork } from '@/config/assets'
 import { unlockAudio } from '@/core/audio/engine'
 import { useSession } from '@/store/session'
@@ -18,8 +20,18 @@ import { vi } from '@/i18n/vi'
 
 export function App() {
   const { started, setStarted, debug, setDebug, offline } = useSession()
+  const camera = useStage((st) => st.camera)
   useEffect(() => {
     const handle = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && useSession.getState().debug) {
+        setDebug(false)
+        return
+      }
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      )
+        return
       if (
         event.key.toLowerCase() === 'd' &&
         !event.repeat &&
@@ -67,8 +79,12 @@ export function App() {
             {vi.stage}
           </span>
           <span>
-            <CameraOff size={16} />
-            {vi.cameraOff}
+            {camera === 'live' ? <Camera size={16} /> : <CameraOff size={16} />}
+            {camera === 'live'
+              ? vi.camera.live
+              : camera === 'off'
+                ? vi.camera.off
+                : vi.cameraOff}
           </span>
         </div>
         <div className="frame">
@@ -96,11 +112,9 @@ export function App() {
               <img className="illustration" src={artwork.booth} alt="" />
             </div>
           ) : (
-            <div className="session">
-              <Focus size={62} strokeWidth={1.4} />
-              <h1>{vi.ready}</h1>
-              <p>{vi.phase}</p>
-              <button className="primary" onClick={() => setStarted(false)}>
+            <div className="session-live">
+              <CameraStage />
+              <button className="ghost back" onClick={() => setStarted(false)}>
                 {vi.back}
               </button>
             </div>
