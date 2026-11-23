@@ -2,6 +2,7 @@ import { props } from '@/config/props'
 import { getStageEngine } from '@/components/stage/CameraStage'
 import { useFx } from '@/store/fx'
 import { useAlbum } from '@/store/album'
+import { ShareSettings } from '@/components/common/ShareModal'
 import { useEffect } from 'react'
 import { vi } from '@/i18n/vi'
 
@@ -112,6 +113,8 @@ export function SettingsPanel() {
           )}
         </p>
       )}
+      <h3 className="panel-sub">{vi.share.title}</h3>
+      <ShareSettings />
     </div>
   )
 }

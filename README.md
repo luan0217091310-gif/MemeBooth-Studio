@@ -1,103 +1,147 @@
 # MemeBooth Studio
 
-MemeBooth Studio là phòng chụp ảnh bằng cử chỉ chạy trong trình duyệt. **Phiên bản 0.1 hoàn thành giai đoạn 0**. Bạn có thể mở sân khấu tiếng Việt, xem thông tin kỹ thuật và mở lại toàn bộ bản production khi mất kết nối. Camera, vẽ trên không, chụp ảnh và quay video nằm ở các giai đoạn sau.
+Phòng chụp ảnh bằng cử chỉ, chạy **100% trên trình duyệt**. Dùng tay và khuôn mặt để vẽ trên không, nổ meme AR, trang trí sticker và chữ, chụp photobooth, quay video có tiếng, giữ kỷ niệm trong cuốn Photo Book lật trang 3D và chơi Pose Challenge. Camera, ảnh và âm thanh không rời khỏi máy bạn. Sau lần tải đầu, ứng dụng chạy được khi mất mạng.
 
-## Mở trên máy của bạn
+**Phiên bản 1.0**: đã triển khai đủ giai đoạn 0–7. Xem phần [Nghiệm thu](#nghiệm-thu) để biết tiêu chí nào đã đo trên máy thử và tiêu chí nào cần kiểm tra trên thiết bị thật.
 
-Dùng Node.js 24 LTS và npm. Môi trường nghiệm thu dùng Node 24.14.1 trên Windows. Cần kết nối Internet ở lần cài đầu để lấy các gói npm và hai model.
+## Cài đặt và chạy
+
+Cần Node.js 24 LTS và npm. Lần cài đầu cần Internet để tải gói npm và hai model AI.
 
 ```sh
 git clone https://github.com/luan0217091310-gif/MemeBooth-Studio.git
 cd MemeBooth-Studio
-npm ci
+npm ci            # tự chạy fetch-assets ở bước postinstall
 npm run build
-npm run preview
+npm run preview   # http://127.0.0.1:48217/
 ```
 
-Mở **[MemeBooth Studio trên localhost](http://127.0.0.1:48217/)** trong trình duyệt cùng máy. Giữ tiến trình preview chạy trong lúc dùng. Nếu cổng 48217 đang bận, chọn cổng khác và mở đúng URL Vite in ra. Bộ nhớ ngoại tuyến gắn với từng địa chỉ và cổng.
+`getUserMedia` chỉ chạy trên HTTPS hoặc `localhost`. Để thử trên điện thoại, triển khai thư mục `dist/` lên một địa chỉ HTTPS mà điện thoại truy cập được.
 
-1. Bấm **Bắt đầu** để mở khung ngắm. Nút **Quay lại** đưa bạn về màn hình đầu. Ở mốc này trình duyệt chưa yêu cầu quyền camera hay micro.
-2. Nhấn **D** hoặc chọn **Thông tin studio** để xem phiên bản MediaPipe, số tệp đã chuẩn bị và trạng thái ngoại tuyến. Nhấn **Esc** để đóng.
-3. Đợi dòng **Sẵn sàng ngoại tuyến** ở chân trang. Trong DevTools chọn Network → Offline rồi tải lại tab. Thử mở lại khung ngắm và bảng thông tin.
+Khi phát triển, dùng `npm run dev`. Service worker chỉ đăng ký ở bản production.
 
-Khi sửa mã, dùng `npm run dev` và mở URL Vite in ra. Service worker chỉ được đăng ký ở bản production. Dùng `npm run build` và `npm run preview` để kiểm tra chế độ ngoại tuyến. Triển khai file tĩnh từ thư mục `dist/` tại gốc một origin HTTPS; localhost cũng hỗ trợ service worker.
+### `npm run fetch-assets`
 
-## Các lệnh của dự án
+`scripts/fetch-assets.mjs` tải một lần `gesture_recognizer.task` và `face_landmarker.task` vào `public/mediapipe/models/` và kiểm tra SHA-256. Script cũng sao chép WASM từ `node_modules/@mediapipe/tasks-vision/wasm` vào `public/mediapipe/wasm/` và ghi phiên bản cùng mã băm vào `public/mediapipe/manifest.json`. Khi chạy, ứng dụng không tải gì từ CDN. Chạy lại lệnh này nếu model bị thiếu hoặc hỏng.
 
-| Lệnh                   | Công việc                                                                                          |
-| ---------------------- | -------------------------------------------------------------------------------------------------- |
-| `npm ci`               | Cài đúng lockfile, sau đó tự chạy bước chuẩn bị tài nguyên.                                        |
-| `npm run fetch-assets` | Kiểm tra và khôi phục model, đối chiếu WASM với SDK đã cài, ghi lại manifest.                      |
-| `npm run dev`          | Chạy Vite với cập nhật nóng.                                                                       |
-| `npm run typecheck`    | Kiểm tra TypeScript strict và truy cập mảng với `noUncheckedIndexedAccess`.                        |
-| `npm run lint`         | Chạy ESLint trên mã ứng dụng, script và test.                                                      |
-| `npm test`             | Chạy Vitest cho luồng mở sân khấu, trạng thái ngoại tuyến và tính toàn vẹn của tài nguyên.         |
-| `npm run build`        | Kiểm tra type, tạo bản production và sinh service worker từ danh sách tệp thực tế.                 |
-| `npm run preview`      | Phục vụ bản đã build trên máy.                                                                     |
-| `npm run test:offline` | Sau khi build, chạy Playwright với Chrome đã cài. Test tự mở hoặc dùng lại preview tại cổng 48217. |
-| `npm run format`       | Định dạng mã bằng Prettier.                                                                        |
+### Các lệnh
 
-Để chạy cùng bài kiểm tra trên Edge trong một phiên PowerShell:
+| Lệnh                   | Công việc                                                                                 |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `npm run dev`          | Vite với cập nhật nóng                                                                    |
+| `npm run build`        | Typecheck, build production và sinh service worker từ danh sách tệp thật                  |
+| `npm run preview`      | Phục vụ bản build tại cổng 48217                                                          |
+| `npm run typecheck`    | TypeScript strict, `noUncheckedIndexedAccess`                                             |
+| `npm run lint`         | ESLint, không có `any` ngầm                                                               |
+| `npm test`             | 70 unit test (Vitest)                                                                     |
+| `npm run test:offline` | 6 test trình duyệt (Playwright, camera giả của Chrome); `BROWSER_CHANNEL=msedge` cho Edge |
+| `npm run fetch-assets` | Tải/kiểm tra model và WASM                                                                |
 
-```powershell
-$env:BROWSER_CHANNEL = 'msedge'
-npm run test:offline
-Remove-Item Env:BROWSER_CHANNEL
+## Cách dùng nhanh
+
+1. Bấm **Bắt đầu** rồi cho phép camera, hoặc chọn **Dùng không cần camera** để dùng chuột/cảm ứng.
+2. **Vẽ**: giơ 1 ngón để vẽ, 2 ngón để tẩy, chụm ngón để gắp sticker, xoè tay 2 giây để xoá bảng (có Hoàn tác).
+3. **Meme** (phím `M`): giơ ngón cái 👍, chữ V, há miệng, tim bằng 2 tay… Hoặc mở **Kho Meme** và bấm vào thẻ.
+4. **Chụp** (`Space`) và **Quay** (`R`) ở dock bên dưới. Chọn khung Polaroid, Strip, Lưới hoặc 16:9 bằng nút bên trái dock.
+5. Ngăn kéo bên phải: Cọ vẽ, Sticker & Chữ, Kho Meme, Tạo Meme, Phụ kiện AR, Vibe, Photo Book, Cài đặt.
+6. **Thử thách**: 5 lượt, mỗi lượt 5 giây. Chọn Dễ hoặc Khó.
+
+Phím tắt: `Space` chụp · `R` quay · `M` đổi chế độ · `D` thông tin kỹ thuật · `Ctrl+Z` / `Ctrl+Shift+Z` · `Esc` đóng/huỷ · `←` `→` lật sổ. Có thể bấm nút bằng tay: trỏ ngón vào nút và giữ 0,8 giây.
+
+## Kiến trúc tóm tắt
+
+```text
+Camera (getUserMedia) --> Layer 0: WebGL2 filter, lật gương (lớp duy nhất được lật)
+   |
+   +--> 15-20 fps, 480p ImageBitmap --> Web Worker: GestureRecognizer + FaceLandmarker
+                                          (xen kẽ, 1 frame in-flight, GPU -> CPU -> main thread)
+                                                   | RawResult
+   toDisplay() (lật đúng một lần) --> nội suy + One Euro --> PerceptionSnapshot (60 fps)
+                |                         |                    |
+         Draw FSM / PINCH          Combo engine          AR props, FX
+                v                         v                    v
+           Layer 1 (vector)          Layer 2 (meme, hạt, frame, props)     Layer 3 HUD (chỉ màn hình)
+                \_________________________/
+                 Compositor (L0+L1+L2) --> ảnh, Live Photo, GIF, video (+ audio master bus)
 ```
 
-## Model, WASM và hoạt động ngoại tuyến
+- **Hai vòng lặp**: render 60 fps (`core/canvas/renderLoop.ts`) và inference trong worker (`core/ai/vision.worker.ts`). Hai vòng chỉ gặp nhau qua snapshot mới nhất. React chỉ vẽ DOM và đọc store tối đa 10 lần/giây.
+- **Toạ độ**: mọi thứ ở display space [0..1]. Chỉ `toDisplay()` chuyển toạ độ từ MediaPipe và chỉ Layer 0 lật canvas, nên chữ không bao giờ bị ngược. Mọi chuyển đổi sang pixel đi qua `core/canvas/viewport.ts`.
+- **Compositor** (`core/canvas/compositor.ts`) có bản sao riêng của các lớp 0–2 và vẽ ở độ phân giải xuất. Compositor không có tham chiếu tới HUD, nên HUD không thể lọt vào file.
+- **Âm thanh**: một `AudioContext`; `masterGain → limiter → loa` và `→ MediaStreamDestination` để ghi hình. Micro không bao giờ ra loa.
+- **Lưu trữ**: `core/storage/repo.ts` là cổng duy nhất vào IndexedDB (các store `memes`, `books`, `pages`, `settings`, `meta`), có migration và xử lý `QuotaExceededError`.
+- **Tải theo nhu cầu**: MediaPipe, sân khấu live, Photo Book, GIF encoder và Highlight Reel là các chunk riêng.
 
-`scripts/fetch-assets.mjs` tải hai model float16 phiên bản 1 của Google vào `public/mediapipe/models/`. Script kiểm tra SHA-256 trước khi ghi tệp. Lần chạy tiếp theo tái sử dụng model có đúng mã băm. Model bị thiếu hoặc hỏng được tải lại. Loader JavaScript và WASM được sao chép từ chính phiên bản `@mediapipe/tasks-vision` trong lockfile vào `public/mediapipe/wasm/`. Manifest ghi phiên bản SDK, đường dẫn và mã băm từng tệp. [Gesture Recognizer](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer) · [Face Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker)
+| Thư mục               | Nội dung                                                                   |
+| --------------------- | -------------------------------------------------------------------------- |
+| `src/core/ai/`        | worker, client (backpressure, fallback), filters, gestures, combo engine   |
+| `src/core/canvas/`    | render loop, viewport, layers, brushes, particles, props, fx, compositor   |
+| `src/core/audio/`     | engine, synths, sound registry, mic analyser, recorder (chọn mime)         |
+| `src/core/capture/`   | photobooth/video controller, layouts, GIF worker, Highlight Reel           |
+| `src/core/challenge/` | logic game (thuần) và controller vòng chơi                                 |
+| `src/core/share/`     | `LocalShareProvider`, `UploadShareProvider` (tắt mặc định)                 |
+| `src/core/storage/`   | repo IndexedDB, migrations, meme tự tạo, gói meme, đồng bộ cài đặt         |
+| `src/config/`         | `vibes`, `gestures`, `memes`, `effects`, `props`, `stickers`, `challenges` |
+| `src/store/`          | các slice Zustand                                                          |
+| `src/i18n/vi.ts`      | toàn bộ chuỗi giao diện tiếng Việt                                         |
 
-Hai model, runtime và manifest chiếm khoảng **40,2 MiB**. Repo lưu script và lockfile để dựng lại các tệp nhị phân này khi cài đặt. Khi mở bản production lần đầu, trình duyệt lưu cả ứng dụng, font tiếng Việt, hình minh họa và tài nguyên AI từ cùng origin. Service worker chỉ báo sẵn sàng sau khi cache đã cài và trang đã nằm dưới quyền điều khiển của worker. Mỗi bản build có mã cache dựa trên nội dung. Việc xóa dữ liệu trang hoặc trình duyệt thu hồi dung lượng sẽ yêu cầu tải lại.
+## Thêm nội dung mới
 
-Bản hiện tại chạy hoàn toàn client-side, dùng SVG gốc và font đóng gói cục bộ. Sân khấu không gửi ảnh, âm thanh hoặc landmark. Giai đoạn 0 chưa khởi tạo model nhận diện nên chưa có FPS hay số đo inference.
+- **Meme**: thêm một `MemeDef` vào `src/config/memes.ts`, gồm hình SVG gốc, caption, `soundId`, `includeInChallenge` và `TriggerRule`. Rule có các trường `all` (điều kiện), `holdMs`, `windowMs`, `cooldownMs`, `priority`, `effect`. Hiệu ứng (hạt, khung, rung, flash, vị trí thẻ) khai báo trong `src/config/effects.ts`. Meme tự xuất hiện trong Kho Meme và Thử thách. Người dùng cũng có thể tạo meme ngay trong ứng dụng (**Tạo Meme**).
+- **Âm thanh**: viết hàm synth `(ctx, dest, t, params) => duration` trong `src/core/audio/synths/index.ts` rồi đăng ký ID trong `soundRegistry.ts`. Muốn dùng file thật thì gọi `registerBuffer(id, audioBuffer)` với cùng ID.
+- **Vibe**: thêm một `VibePreset` vào `src/config/vibes.ts` (token `--mb-*`, tham số shader, cọ, bảng màu, hạt, gói âm thanh, nhạc nền, khung ảnh, bìa sổ). Gói thay thế âm thanh khai báo trong `soundPacks`. Không cần sửa component.
+- **AR prop**: thêm `{ anchor, offset, scaleFactor, aspect, yawSquash, svg }` vào `src/config/props.ts`.
+- **Sticker**: thêm SVG vào `src/config/stickers.ts`.
+- **Cử chỉ / ngưỡng**: `src/config/gestures.ts` (bảng debug `D` có thanh trượt chỉnh trực tiếp).
 
-## Kiến trúc và điểm mở rộng
+## Quyền riêng tư và chia sẻ
 
-| Đường dẫn                                      | Trách nhiệm hiện tại                                                                  |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `src/app/`                                     | Khung sân khấu Responsive, token màu Kawaii, theo dõi service worker.                 |
-| `src/components/common/`                       | Hộp thoại thông tin và màn hình khôi phục lỗi React.                                  |
-| `src/store/session.ts`                         | Trạng thái phiên, hộp thoại và ngoại tuyến trong Zustand.                             |
-| `src/types/`                                   | Hợp đồng về landmark, snapshot, trigger, meme, vibe, trang sổ và chia sẻ theo mục 11. |
-| `src/assets/stickers/`, `src/config/assets.ts` | SVG gốc và registry hình ảnh.                                                         |
-| `src/core/audio/engine.ts`                     | Mở hoặc tiếp tục AudioContext sau tương tác Bắt đầu.                                  |
-| `src/i18n/vi.ts`                               | Chuỗi tiếng Việt cho giao diện và thông báo khởi động.                                |
-| `scripts/`                                     | Chuẩn bị tài nguyên, tạo danh sách precache và service worker production.             |
-| `tests/`                                       | Test ứng dụng, mã băm và bài kiểm tra trình duyệt ngoại tuyến.                        |
+- Không backend, không analytics. Bài test ngoại tuyến xác nhận không có request nào ra ngoài origin.
+- **Chia sẻ** mặc định qua `LocalShareProvider`: tải về, hoặc Web Share API nếu thiết bị chia sẻ được file. Mã QR chỉ mở ứng dụng trên máy khác, không chứa ảnh.
+- `UploadShareProvider` **tắt mặc định**. Chỉ khi bạn bật trong Cài đặt và nhập máy chủ HTTPS của riêng bạn thì ảnh mới được gửi đi. Máy chủ nhận `POST` multipart với trường `file` và trả `{"url": "https://…"}`; khi đó mới có QR trỏ tới ảnh.
 
-Các giai đoạn sau dùng một sân khấu chung. Theo thiết kế, worker AI gửi snapshot mới nhất, vòng render đọc store qua ref và ghép các lớp camera, nội dung sáng tạo và hiệu ứng. HUD nằm ngoài compositor để ảnh và video xuất ra chỉ chứa nội dung sân khấu.
+## Nghiệm thu
 
-**Cách thêm nội dung theo lộ trình**
+Đo trên Windows, Chrome 157 và Edge 158. Máy thử không có webcam và GPU thật: camera là camera giả của Chrome, đồ hoạ render bằng CPU. [Chi tiết theo trình duyệt](docs/browser-matrix.md)
 
-- **Hình minh họa hiện tại** — đặt SVG gốc trong `src/assets/stickers/`, import URL vào `src/config/assets.ts` và dùng mục registry trong component. Bản build đưa hình vào cache ngoại tuyến.
-- **Meme** — thêm một `MemeDef` (hình SVG, caption, `soundId`, `TriggerRule` gồm điều kiện, `holdMs`, `windowMs`, cooldown, độ ưu tiên) vào `src/config/memes.ts`, và hiệu ứng tương ứng vào `src/config/effects.ts`. Meme tự xuất hiện trong Kho Meme.
-- **Âm thanh** — viết hàm synth trong `src/core/audio/synths/index.ts` và đăng ký ID trong `soundRegistry.ts`. Muốn dùng file thật thì gọi `registerBuffer(id, audioBuffer)` với cùng ID.
-- **AR prop** — thêm `{ anchor, offset, scaleFactor, aspect, svg }` vào `src/config/props.ts`. Kiểm tra khi nghiêng đầu, quay mặt và khi khuôn mặt rời khung.
-- **Vibe** — thêm một `VibePreset` vào `src/config/vibes.ts` (token UI `--mb-*`, tham số bộ lọc, cọ + bảng màu, hạt, gói âm thanh, khung ảnh, bìa sổ). Không cần sửa component.
+| Tiêu chí                                             | Kết quả                                                                                |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| typecheck, lint, test, build                         | Đạt (70 unit test, 6 test trình duyệt trên cả Chrome và Edge)                          |
+| Lighthouse desktop, màn hình chính                   | **Performance 100**, Accessibility 100, Best Practices 100                             |
+| JS ban đầu (gzip, chưa gồm MediaPipe)                | 65 KB (ngân sách 300 KB)                                                               |
+| Ngoại tuyến                                          | Tải lại khi mất mạng, đọc lại 6 tệp AI đúng SHA-256, 0 request ra ngoài                |
+| Nhận diện chạy trong worker                          | 16 lần/giây, GPU delegate (đo trên camera giả)                                         |
+| Render khi đứng yên / khi nổ 20 meme liên tiếp       | 60 fps / 46–49 fps (render bằng CPU; **cần đo lại trên laptop có GPU**, mục tiêu ≥ 50) |
+| Đổi vibe                                             | 9–14 ms, giữ nguyên nét vẽ (yêu cầu < 300 ms)                                          |
+| Ảnh/video không chứa HUD, chữ không bị ngược         | Đạt (kiểm tra ảnh xuất)                                                                |
+| Video có tiếng meme                                  | Đạt: WebM VP9 + Opus                                                                   |
+| F5 không mất sổ ảnh và meme; meme mới dùng được ngay | Đạt (Playwright)                                                                       |
+| Pose Challenge chơi hết 5 lượt                       | Đạt (Playwright, chế độ tự chấm khi không có camera)                                   |
+| Từ chối camera hoặc micro không làm hỏng app         | Đạt                                                                                    |
 
-Các module được thêm khi đến giai đoạn tương ứng. React được giữ ở 18.3.1 theo yêu cầu tương thích với Photo Book. TypeScript ghim ở 6.0.3 trong dải hỗ trợ của typescript-eslint. Các phụ thuộc được ghim phiên bản chính xác.
+**Cần kiểm tra trên thiết bị thật** (máy thử không làm được):
 
-## Lộ trình và nghiệm thu
+- Độ lệch giữa con trỏ và đầu ngón trỏ; mỗi trigger kích đúng ≥ 8/10 lần; ngồi yên 60 giây không kích nhầm (đã có unit test với dữ liệu giả lập).
+- FPS trên laptop có GPU và trên điện thoại tầm trung.
+- Safari (macOS, iOS) xuất MP4; Firefox; Chrome Android.
+- Hai người chưa từng dùng làm xong 3 bước hướng dẫn mà không cần giải thích thêm.
 
-| Giai đoạn | Phạm vi                                              | Trạng thái                                |
-| --------- | ---------------------------------------------------- | ----------------------------------------- |
-| 0         | Khung dự án, type, AI assets, ngoại tuyến, kiểm thử  | Đã triển khai và tự kiểm                  |
-| 1         | Camera, shader, AI worker, làm mượt và HUD           | Đã triển khai, chờ đo trên máy thật       |
-| 2         | Vẽ trên không, tẩy vector, sticker và chữ            | Đã triển khai, chờ thử bằng tay thật      |
-| 3         | Meme, combo, hạt, AR và âm thanh                     | Đã triển khai, chờ thử bằng mặt/tay thật  |
-| 4         | Vibe Sync, onboarding và điều khiển                  | Đã triển khai, chờ thử với người dùng mới |
-| 5         | Photobooth, Live Photo, GIF và video                 | Đã triển khai, chờ thử Safari             |
-| 6         | IndexedDB, meme tự tạo, Photo Book và Highlight Reel | Đã triển khai và tự kiểm                  |
-| 7         | Pose Challenge, chia sẻ, QR và nghiệm thu toàn bộ    | Dự kiến                                   |
+## Giới hạn đã biết
 
-Mốc 0 đạt typecheck, lint, 3 bài unit test và build. JavaScript ban đầu **52,28 kB gzip** theo Vite. Bản build đưa **23 tệp** vào danh sách dùng ngoại tuyến. Bài kiểm tra trình duyệt ngắt mạng, tải lại, mở sân khấu và bảng thông tin, đọc lại 6 tệp AI, đối chiếu SHA-256 và kiểm tra các request lỗi hoặc ra ngoài origin. [Kết quả theo trình duyệt](docs/browser-matrix.md)
+- **Cử chỉ**: GestureRecognizer chỉ có 7 cử chỉ dựng sẵn. 1 ngón, chụm, 2 ngón và tim 2 tay được tính bằng hình học từ landmark, nên có thể cần chỉnh ngưỡng theo ánh sáng và bàn tay thật.
+- **Nhãn tay trái/phải** được chuẩn hoá trong `toDisplay.ts` theo giả định ảnh không lật. Hãy kiểm tra bằng cách giơ tay phải và xem nhãn trong bảng `D`.
+- **Video**: Chrome/Firefox ghi WebM (có thể thiếu thời lượng trong metadata), Safari ghi MP4. Ứng dụng không chuyển đổi định dạng. Trình duyệt không có MediaRecorder sẽ được báo rõ lý do.
+- **Ghi hình và Highlight Reel** dừng khi tab bị ẩn, vì `requestAnimationFrame` không chạy ở tab ẩn. Reel mất thời gian bằng độ dài video (khoảng 13,5 giây).
+- **IndexedDB** có hạn mức và trình duyệt có thể tự xoá dữ liệu. Ứng dụng gọi `storage.persist()`, hiện dung lượng đã dùng và cảnh báo khi trên 80%. Nên tải sổ về (`.zip`) để giữ lâu dài.
+- **Photo Book** về trang bìa khi đổi kích thước cửa sổ, vì react-pageflip chỉ đọc kích thước lúc khởi tạo.
+- **Pose Challenge** khi không có camera dùng chế độ tự chấm (độ khớp cố định 60%). Chế độ 2 người thi đấu chưa làm (tuỳ chọn trong spec).
+- **Hiệu năng hạt**: canvas 2D. Nếu máy yếu vẫn dưới 50 fps khi nổ liên tục, bước tiếp theo là chuyển hạt sang WebGL. Hiện tại app tự giảm mật độ hạt khi FPS dưới 50 trong 2 giây.
+- Chưa hỗ trợ vuốt tay để lật trang sổ (tuỳ chọn).
 
 ## Khi gặp lỗi
 
-- **Tải model thất bại khi cài** — xác nhận máy có thể truy cập npm registry và `storage.googleapis.com`, sau đó chạy lại `npm ci`. Nếu đã cài thư viện, `npm run fetch-assets` sẽ sửa tệp thiếu hoặc sai mã băm.
-- **Thông báo thiếu manifest** — chạy `npm run fetch-assets` từ thư mục repo. Với production, build lại để cập nhật cả manifest trong `dist/`.
-- **Chưa sẵn sàng ngoại tuyến** — dùng bản preview qua localhost hoặc HTTPS. Kiểm tra còn dung lượng lưu trữ cho origin và chờ báo sẵn sàng trước khi ngắt mạng.
-- **Thấy bản cũ sau cập nhật** — đóng các tab đang dùng studio rồi mở lại khi đang kết nối. Service worker mới kích hoạt khi những tab của bản trước đã đóng.
-- **Mở localhost trên điện thoại** — localhost trỏ tới chính điện thoại. Để thử trên thiết bị khác, phục vụ `dist/` qua địa chỉ HTTPS mà thiết bị đó truy cập được.
+- **Tải model thất bại khi cài**: kiểm tra mạng tới npm registry và `storage.googleapis.com`, rồi chạy `npm run fetch-assets`.
+- **Không mở được camera**: dùng HTTPS/localhost, cấp quyền theo hướng dẫn trong app, đóng ứng dụng khác đang dùng webcam, hoặc chọn **Dùng không cần camera**.
+- **Nhận diện nạp lâu**: sau 10 giây có nút **Thử lại** và **Chạy chế độ CPU**.
+- **Thấy bản cũ sau cập nhật**: đóng hết các tab studio rồi mở lại khi đang có mạng.
+- **Bộ nhớ đầy**: xoá bớt trang/sổ trong Photo Book (tải `.zip` về trước).

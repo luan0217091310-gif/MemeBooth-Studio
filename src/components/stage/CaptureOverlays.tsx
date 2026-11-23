@@ -11,7 +11,8 @@ import { useUi } from '@/store/ui'
 import { isQuotaError, useAlbum } from '@/store/album'
 import { useVibe } from '@/store/vibe'
 import type { NewPage } from '@/core/storage/repo'
-import { BookHeart } from 'lucide-react'
+import { BookHeart, Share2 } from 'lucide-react'
+import { useShare } from '@/store/share'
 import { vi } from '@/i18n/vi'
 
 /** Big 3-2-1 digits. DOM overlay: never part of the compositor output. */
@@ -179,6 +180,15 @@ export function CaptureReview() {
               <RotateCcw size={18} />
               {vi.capture.retake}
             </button>
+            <button
+              className="ghost"
+              onClick={() =>
+                useShare.getState().open(photo.png, captureFilename('png'))
+              }
+            >
+              <Share2 size={18} />
+              {vi.share.title}
+            </button>
           </div>
           <div className="card-actions">
             <button
@@ -273,6 +283,15 @@ export function CaptureReview() {
             >
               <Download size={18} />
               {vi.capture.video}
+            </button>
+            <button
+              className="ghost"
+              onClick={() =>
+                useShare.getState().open(video.blob, captureFilename(video.ext))
+              }
+            >
+              <Share2 size={18} />
+              {vi.share.title}
             </button>
             <button className="ghost" onClick={close}>
               {vi.capture.close}

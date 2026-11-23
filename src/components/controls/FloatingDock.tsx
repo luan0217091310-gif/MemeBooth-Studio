@@ -2,6 +2,7 @@ import { Camera, Square, Trophy, Video, X } from 'lucide-react'
 import { getStageEngine } from '@/components/stage/CameraStage'
 import { layoutOrder, layouts } from '@/core/capture/layouts'
 import { useCapture } from '@/store/capture'
+import { useChallenge } from '@/store/challenge'
 import { vi } from '@/i18n/vi'
 
 /**
@@ -12,6 +13,9 @@ import { vi } from '@/i18n/vi'
 export function FloatingDock() {
   const { phase, layout, set, shot, total } = useCapture()
   const capture = () => getStageEngine()?.capture
+  const chPhase = useChallenge((s) => s.phase)
+  // During a challenge round the challenge HUD owns the dock.
+  if (chPhase === 'turn' || chPhase === 'between') return null
   if (phase === 'photo' || phase === 'composing')
     return (
       <div className="dock" role="toolbar" aria-label={vi.dock.label}>
@@ -78,13 +82,11 @@ export function FloatingDock() {
       </button>
       <button
         className="dock-btn"
-        aria-disabled
-        title={vi.dock.challenge + ' · ' + vi.soon}
-        onClick={(e) => e.preventDefault()}
+        data-dwell
+        onClick={() => getStageEngine()?.challengeCtl.open()}
       >
         <Trophy size={26} />
         <span>{vi.dock.challenge}</span>
-        <small>{vi.soon}</small>
       </button>
     </div>
   )

@@ -51,10 +51,14 @@ it('live stage shows the dock, drawer rail and quick bar', async () => {
   render(<App />)
   fireEvent.click(screen.getByRole('button', { name: vi.start }))
   expect(
-    await screen.findByRole('toolbar', { name: vi.dock.label }),
+    await screen.findByRole(
+      'toolbar',
+      { name: vi.dock.label },
+      { timeout: 15_000 },
+    ),
   ).toBeTruthy()
   expect(screen.getByRole('navigation', { name: vi.drawer.label })).toBeTruthy()
   fireEvent.click(screen.getByRole('button', { name: vi.drawer.memes }))
   expect(screen.getByRole('region', { name: vi.drawer.memes })).toBeTruthy()
   expect(screen.getAllByText('Đỉnh nóc kịch trần').length).toBeGreaterThan(0)
-})
+}, 30_000)

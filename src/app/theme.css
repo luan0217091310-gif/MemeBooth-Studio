@@ -1607,3 +1607,124 @@ dd {
     display: none;
   }
 }
+
+/* ---------- phase 7: challenge + share ---------- */
+.challenge-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.challenge-card-prompt {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: min(360px, 86%);
+  padding: 14px 18px;
+  border: 2px solid var(--mb-line);
+  border-radius: 20px;
+  background: var(--mb-surface);
+  box-shadow: 4px 5px var(--mb-line);
+  text-align: center;
+}
+.challenge-card-prompt img {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+}
+.challenge-card-prompt b {
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+.ch-round {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--mb-muted);
+}
+.ch-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+.ch-emoji {
+  font-size: 1.8rem;
+}
+.ch-time,
+.ch-match {
+  width: 100%;
+  height: 10px;
+  border-radius: 99px;
+  background: #0001;
+  overflow: hidden;
+}
+.ch-time i,
+.ch-match i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--mb-accent-2);
+  transition: width 0.1s linear;
+}
+.ch-match i {
+  background: #2fbf71;
+}
+.ch-result {
+  margin: 4px 0 0;
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+.ch-result.hit {
+  color: #1a9a55;
+}
+.ch-result.miss {
+  color: #c0262d;
+}
+.score-table {
+  flex: 1;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  align-self: start;
+}
+.score-table th,
+.score-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #0002;
+  text-align: left;
+}
+.score-table tr.miss {
+  opacity: 0.6;
+}
+.score-strip {
+  max-height: 46vh;
+  border-radius: 8px;
+}
+.qr-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+.qr-row figure {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff;
+  color: #222;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.share-card {
+  width: min(520px, 100%);
+}
+.share-settings {
+  display: grid;
+  gap: 8px;
+}

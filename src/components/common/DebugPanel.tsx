@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
-import { getStageEngine } from '@/components/stage/CameraStage'
+import { getStageEngine } from '@/core/engineRef'
 import { faceConfig, gestureConfig, smoothingConfig } from '@/config/gestures'
 import { useSession } from '@/store/session'
 import { useStage } from '@/store/stage'
@@ -253,7 +253,7 @@ export function DebugPanel() {
       </div>
       <dl>
         <dt>{vi.release}</dt>
-        <dd>0.4 · {vi.milestone}</dd>
+        <dd>1.0 · {vi.milestone}</dd>
         <dt>{vi.model}</dt>
         <dd>{assets}</dd>
         <dt>{vi.offlineLabel}</dt>

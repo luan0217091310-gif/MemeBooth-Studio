@@ -7,37 +7,23 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { DebugPanel } from '@/components/common/DebugPanel'
-import { Toast } from '@/components/common/Toast'
-import { QuickBar } from '@/components/controls/CreativeToolbar'
-import { FloatingDock } from '@/components/controls/FloatingDock'
-import { SideDrawer } from '@/components/controls/SideDrawer'
 import { VibeChip } from '@/components/controls/VibePicker'
-import { CameraStage } from '@/components/stage/CameraStage'
-import { CoachMarks, StageHints } from '@/components/stage/CoachMarks'
-import { GesturePills } from '@/components/stage/GesturePills'
-import {
-  CaptureReview,
-  CountdownOverlay,
-  RecordingBadge,
-} from '@/components/stage/CaptureOverlays'
-import { getStageEngine } from '@/components/stage/CameraStage'
-import { useCapture } from '@/store/capture'
 import { artwork } from '@/config/assets'
-import { unlockAudio } from '@/core/audio/engine'
+import { setMuted, unlockAudio } from '@/core/audio/engine'
+import { startSettingsSync } from '@/core/storage/settingsSync'
+import { useAlbum } from '@/store/album'
+import { useFx } from '@/store/fx'
 import { useScene } from '@/store/scene'
 import { useSession } from '@/store/session'
 import { useStage } from '@/store/stage'
 import { useUi } from '@/store/ui'
 import { useVibe } from '@/store/vibe'
 import { vi } from '@/i18n/vi'
-import { loadCustomMemes } from '@/core/storage/customMemes'
-import { startSettingsSync } from '@/core/storage/settingsSync'
-import { useAlbum } from '@/store/album'
-import { setMuted } from '@/core/audio/engine'
-import { useFx } from '@/store/fx'
 
-// Photo Book (react-pageflip) is its own chunk, loaded on demand.
-const PhotoBookView = lazy(() => import('@/components/photobook/PhotoBookView'))
+// The live stage (camera, AI, canvas, capture...) is a separate chunk so the
+// home screen loads fast; it is fetched when the user presses Start.
+const LiveStage = lazy(() => import('./LiveStage'))
+const preloadLiveStage = () => void import('./LiveStage')
 
 function ModeChip() {
   const mode = useScene((s) => s.mode)
@@ -73,7 +59,6 @@ function FpsBadge() {
 export function App() {
   const { started, setStarted, debug, setDebug, offline } = useSession()
   const preset = useVibe((s) => s.preset)
-  const bookOpen = useUi((s) => s.bookOpen)
   useEffect(() => {
     void startSettingsSync((s) => {
       if (s.muted) {
@@ -84,20 +69,8 @@ export function App() {
     }).catch(() => undefined)
   }, [])
   useEffect(() => {
-    getStageEngine()?.setVisionPaused(bookOpen)
-  }, [bookOpen])
-  useEffect(() => {
     const handle = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        const phase = useCapture.getState().phase
-        if (phase === 'photo' || phase === 'recording') {
-          getStageEngine()?.capture.cancel()
-          return
-        }
-        if (phase === 'review' || phase === 'videoReview') {
-          getStageEngine()?.capture.closeReview()
-          return
-        }
         if (useSession.getState().debug) setDebug(false)
         else if (useUi.getState().drawer) useUi.getState().setDrawer(null)
         return
@@ -116,26 +89,6 @@ export function App() {
         return
       }
       if (mod || event.altKey || event.repeat) return
-      const cap = getStageEngine()?.capture
-      // Space on a focused button must still press that button.
-      const onButton =
-        event.target instanceof HTMLElement && !!event.target.closest('button')
-      if (
-        event.key === ' ' &&
-        cap &&
-        !onButton &&
-        useSession.getState().started
-      ) {
-        event.preventDefault()
-        if (useCapture.getState().phase === 'idle') void cap.startPhoto()
-        return
-      }
-      if (key === 'r' && cap) {
-        const phase = useCapture.getState().phase
-        if (phase === 'recording') void cap.stopVideo()
-        else if (phase === 'idle') cap.startVideo()
-        return
-      }
       if (key === 'm') {
         const scene = useScene.getState()
         scene.setMode(scene.mode === 'draw' ? 'meme' : 'draw')
@@ -150,11 +103,7 @@ export function App() {
 
   function start() {
     // AudioContext must be created/resumed inside this user gesture.
-    void unlockAudio()
-      .catch(() => undefined)
-      // Custom meme sounds need the AudioContext to decode.
-      .then(() => loadCustomMemes())
-      .catch(() => undefined)
+    void unlockAudio().catch(() => undefined)
     void useAlbum
       .getState()
       .refresh()
@@ -192,11 +141,11 @@ export function App() {
           <button
             className="info"
             onClick={() => setDebug(!debug)}
-            aria-label={vi.settings}
+            aria-keyshortcuts="D"
           >
             <CircleHelp size={19} />
             <span>{vi.settings}</span>
-            <kbd>D</kbd>
+            <kbd aria-hidden>D</kbd>
           </button>
         </div>
       </header>
@@ -214,7 +163,12 @@ export function App() {
                     <span aria-hidden="true">✦</span>
                   </em>
                 </h1>
-                <button className="primary" onClick={start}>
+                <button
+                  className="primary"
+                  onClick={start}
+                  onPointerEnter={preloadLiveStage}
+                  onFocus={preloadLiveStage}
+                >
                   <Power size={21} />
                   {vi.start}
                 </button>
@@ -228,28 +182,11 @@ export function App() {
           </div>
         </section>
       ) : (
-        <section className="stage live" aria-label={vi.stage}>
-          <CameraStage />
-          <QuickBar />
-          <SideDrawer />
-          <StageHints />
-          <GesturePills />
-          <FloatingDock />
-          <CoachMarks />
-          <CountdownOverlay />
-          <RecordingBadge />
-          <CaptureReview />
-          {bookOpen && (
-            <Suspense
-              fallback={<p className="stage-note">{vi.album.loading}</p>}
-            >
-              <PhotoBookView
-                onClose={() => useUi.getState().setBookOpen(false)}
-              />
-            </Suspense>
-          )}
-          <Toast />
-        </section>
+        <Suspense
+          fallback={<section className="stage live" aria-busy="true" />}
+        >
+          <LiveStage />
+        </Suspense>
       )}
       {!started && (
         <footer>

@@ -20,6 +20,8 @@ import { useUi, type Hint } from '@/store/ui'
 import { onVibe } from '@/store/vibe'
 import type { HandGestureId, PerceptionSnapshot } from '@/types'
 import { CaptureController } from '@/core/capture/captureController'
+import { ChallengeController } from '@/core/challenge/challengeController'
+import type { TriggerRule } from '@/types'
 import { getBus } from '@/core/audio/engine'
 import { Compositor, type CompositorSource } from './compositor'
 import { FxEngine } from './fx'
@@ -79,6 +81,11 @@ export class StageEngine {
   private streamStream: MediaStream | null = null
   private lastStreamFrame = 0
   readonly capture: CaptureController
+  readonly challengeCtl: ChallengeController
+  /** Pose Challenge override: only these rules may fire during a turn. */
+  challenge: { rules: TriggerRule[]; onHit(score: number): void } | null = null
+  /** Latest per-rule match scores (0..1). */
+  lastScores: Record<string, number> = {}
   private vibeParticles = 'peak'
   private unsubVibe: () => void
   private dwellEl: Element | null = null
@@ -131,6 +138,7 @@ export class StageEngine {
       this.vibeParticles = p.particles[0] ?? 'peak'
     })
     this.capture = new CaptureController(this)
+    this.challengeCtl = new ChallengeController(this)
     this.loop.start()
   }
 
@@ -306,12 +314,13 @@ export class StageEngine {
     // Combo engine -> memes.
     const result = stepCombo(
       this.combo,
-      useMemes.getState().rules,
+      this.challenge?.rules ?? useMemes.getState().rules,
       snapshot,
       now,
       mode,
     )
     this.comboScores = result.scores
+    this.lastScores = result.scores
     for (const f of result.fired) {
       const meme = useMemes.getState().byRule(f.ruleId) ?? null
       const handCond = meme?.trigger.all.find((c) => c.kind === 'hand')
@@ -325,6 +334,7 @@ export class StageEngine {
       )
       useFx.getState().set({ lastMeme: meme?.name ?? null })
       if (meme) this.logMeme(meme.id, meme.soundId, now)
+      this.challenge?.onHit(f.score)
     }
 
     // Adaptive quality + reduced motion.
@@ -622,6 +632,7 @@ export class StageEngine {
     window.removeEventListener('resize', this.onWindowResize)
     this.controller.reset()
     this.capture.dispose()
+    this.challengeCtl.stop()
     this.stopStream()
     this.unsubVibe()
     useUi.getState().setHint(null)

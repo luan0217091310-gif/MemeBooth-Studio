@@ -1,15 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { StageEngine } from '@/core/canvas/stageEngine'
+import { getStageEngine, setStageEngine } from '@/core/engineRef'
 import { useStage } from '@/store/stage'
 import { PermissionModal } from '@/components/common/PermissionModal'
 import { LoadingProgress } from '@/components/common/LoadingProgress'
 import { vi } from '@/i18n/vi'
 
-let activeEngine: StageEngine | null = null
-/** Imperative access for UI controls outside the stage (debug, settings). */
-export function getStageEngine(): StageEngine | null {
-  return activeEngine
-}
+export { getStageEngine } from '@/core/engineRef'
 
 export function CameraStage() {
   const root = useRef<HTMLDivElement>(null)
@@ -33,13 +30,13 @@ export function CameraStage() {
       hud: hud.current!,
     })
     engine.current = engineInstance
-    activeEngine = engineInstance
+    setStageEngine(engineInstance)
     // Restore the persisted mirror setting before the first frame.
     engineInstance.setMirror(useStage.getState().mirror)
     void engineInstance.startCamera()
     return () => {
       engineInstance.dispose()
-      if (activeEngine === engineInstance) activeEngine = null
+      if (getStageEngine() === engineInstance) setStageEngine(null)
       engine.current = null
       useStage.getState().set({ camera: 'idle', vision: 'idle', progress: 0 })
     }

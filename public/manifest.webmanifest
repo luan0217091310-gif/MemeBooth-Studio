@@ -1,0 +1,12 @@
+{
+  "name": "MemeBooth Studio",
+  "short_name": "MemeBooth",
+  "description": "Phòng chụp ảnh bằng cử chỉ, chạy hoàn toàn trên máy bạn.",
+  "lang": "vi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff4e6",
+  "theme_color": "#ffb5d8",
+  "icons": [{ "src": "booth.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
