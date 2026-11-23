@@ -36,6 +36,19 @@ export const gestureConfig = {
   activeScore: 0.6,
 }
 
+export const faceConfig = {
+  alpha: 0.3,
+  winkDiff: 0.45,
+  winkOther: 0.3,
+  mouthOpen: { enter: 0.65, exit: 0.5 },
+  smile: { enter: 0.6, exit: 0.45 },
+  pucker: { enter: 0.6, exit: 0.45 },
+  browUp: { enter: 0.6, exit: 0.45 },
+  cheekPuff: { enter: 0.55, exit: 0.4 },
+  /** Max fingertip distance (in hand sizes) to count as touching. */
+  heartTouch: 0.5,
+}
+
 export const drawConfig = {
   penDownMs: 120,
   penUpMs: 60,

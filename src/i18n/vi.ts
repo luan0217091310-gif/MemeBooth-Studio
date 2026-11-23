@@ -120,4 +120,22 @@ export const vi = {
     cancel: 'Huỷ',
     hint: '1 ngón = vẽ · 2 ngón = tẩy · chụm = gắp · xoè tay 2 giây = xoá bảng',
   },
+  fx: {
+    memes: 'Kho Meme',
+    memeNote:
+      'Chuyển sang chế độ Meme rồi làm cử chỉ, hoặc bấm vào thẻ để nổ meme ngay.',
+    ultra: 'Secret Ultra Meme',
+    regular: 'Meme thường',
+    fire: 'Nổ meme',
+    props: 'Phụ kiện AR',
+    propsNote: 'Bật phụ kiện để chúng bám theo khuôn mặt.',
+    settings: 'Cài đặt',
+    mute: 'Tắt tiếng',
+    soundReactive: 'Nhảy theo âm thanh (cần micro)',
+    micDenied: 'Không dùng được micro. Hãy cho phép micro trong trình duyệt.',
+    sensitivity: 'Độ nhạy micro',
+    recordMic: 'Ghi tiếng micro vào video',
+    reduceFlash: 'Giảm nhấp nháy',
+    reducedMotion: 'Giảm chuyển động',
+  },
 } as const

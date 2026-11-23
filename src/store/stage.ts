@@ -20,7 +20,16 @@ export interface PerfInfo {
   handLabels: string
 }
 
+export interface LiveInfo {
+  derived: Record<string, number>
+  blendshapes: Record<string, number>
+  scores: Record<string, number>
+  gestures: Record<string, number>[]
+  particles: number
+}
+
 interface StageState {
+  live: LiveInfo
   camera: CameraStatus
   cameraError?: CameraError
   vision: VisionStatus
@@ -54,5 +63,12 @@ export const useStage = create<StageState>((set) => ({
   slowLoad: false,
   mirror: true,
   perf: initialPerf,
+  live: {
+    derived: {},
+    blendshapes: {},
+    scores: {},
+    gestures: [],
+    particles: 0,
+  },
   set: (partial) => set(partial),
 }))

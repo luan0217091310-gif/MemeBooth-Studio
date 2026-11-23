@@ -39,6 +39,10 @@ export interface HudInput {
   trashSize: number
   trashInset: number
   debug: boolean
+  /** Meme about to fire (hold progress 0..1). */
+  pending: { name: string; progress: number } | null
+  /** Mic level 0..1, or -1 when sound-reactive is off. */
+  micLevel: number
 }
 
 /**
@@ -129,8 +133,71 @@ export class HudLayer {
     }
     if (hud.trash.visible)
       this.trash(ctx, view, input.trashSize, input.trashInset, hud.trash.hot)
+    if (input.pending) this.pending(ctx, view, input.pending)
+    if (input.micLevel >= 0) this.micBar(ctx, view, input.micLevel)
     for (const c of hud.cursors)
       this.cursor(ctx, toPixel(view, c.pos, tmpA), view, c, hud.eraserRadius)
+  }
+
+  private pending(
+    ctx: CanvasRenderingContext2D,
+    view: Viewport,
+    p: { name: string; progress: number },
+  ): void {
+    const cx = view.width / 2
+    const cy = 92
+    const r = 26
+    ctx.save()
+    ctx.fillStyle = 'rgba(40,30,50,0.7)'
+    ctx.beginPath()
+    ctx.arc(cx, cy, r + 6, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.lineWidth = 6
+    ctx.lineCap = 'round'
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)'
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.strokeStyle = '#ff4fd8'
+    ctx.beginPath()
+    ctx.arc(
+      cx,
+      cy,
+      r,
+      -Math.PI / 2,
+      -Math.PI / 2 + Math.PI * 2 * Math.min(1, p.progress),
+    )
+    ctx.stroke()
+    ctx.font = '800 15px "Be Vietnam Pro", sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.lineWidth = 4
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)'
+    ctx.strokeText(p.name, cx, cy + r + 10)
+    ctx.fillStyle = '#fff'
+    ctx.fillText(p.name, cx, cy + r + 10)
+    ctx.restore()
+  }
+
+  private micBar(
+    ctx: CanvasRenderingContext2D,
+    view: Viewport,
+    level: number,
+  ): void {
+    const h = 120
+    const x = view.width - 22
+    const y = view.height / 2 - h / 2
+    ctx.save()
+    ctx.fillStyle = 'rgba(40,30,50,0.6)'
+    ctx.beginPath()
+    ctx.roundRect(x, y, 10, h, 5)
+    ctx.fill()
+    ctx.fillStyle = level > 0.85 ? '#ff3b30' : '#39ff14'
+    const fh = h * Math.min(1, level)
+    ctx.beginPath()
+    ctx.roundRect(x, y + h - fh, 10, fh, 5)
+    ctx.fill()
+    ctx.restore()
   }
 
   private trash(
