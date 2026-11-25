@@ -2107,82 +2107,42 @@ dd {
 }
 
 @media (max-width: 760px) {
+  /* ---------- mobile home screen (modern sleek showcase) ---------- */
   .studio {
-    padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom);
-  }
-  .studio.is-live {
-    padding: env(safe-area-inset-top) 0 0;
+    padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
   }
   .mast {
-    min-height: 46px;
-    padding: 4px 8px;
-    flex-wrap: wrap;
-    row-gap: 4px;
-    column-gap: 6px;
+    min-height: 48px;
+    padding: 4px 2px;
+    gap: 8px;
   }
   .brand img {
     width: 30px;
     height: 30px;
   }
-  .brand span,
+  .brand span {
+    font-size: 1.05rem;
+  }
   .info span,
   .info kbd,
   .dock-btn kbd {
     display: none;
   }
   .info {
-    padding: 7px 9px;
-  }
-  /* Single-row horizontally swipeable control strip so mobile camera stays spacious. */
-  .mast-center {
-    order: 3;
-    flex-basis: 100%;
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    gap: 6px;
-    padding: 2px 0 4px;
-  }
-  .mast-center::-webkit-scrollbar,
-  .pills::-webkit-scrollbar,
-  .drawer-rail::-webkit-scrollbar {
-    display: none;
-  }
-  .mast-center > * {
-    flex-shrink: 0;
-  }
-  .mode-chip button {
-    padding: 5px 9px;
-    font-size: 0.74rem;
-  }
-  .chip {
-    padding: 5px 9px;
-    font-size: 0.74rem;
-    gap: 5px;
-  }
-  .icon-chip {
-    padding: 6px 8px;
-  }
-  .lite-chip span {
-    display: none;
+    padding: 8px;
+    border-width: 1.5px;
   }
   .stage.home {
     min-height: 0;
-  }
-  .stage.live {
-    margin-bottom: 0;
-    border-radius: 18px 18px 0 0;
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
-    box-shadow: none;
+    border-width: 1.5px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+    border-radius: 24px;
   }
   .frame {
     margin: 8px;
-    padding: 16px 12px 18px;
-    gap: 16px;
+    padding: 18px 14px 20px;
+    gap: 18px;
+    border-radius: 18px;
   }
   .welcome {
     grid-template-columns: 1fr;
@@ -2194,14 +2154,14 @@ dd {
     padding: 0;
   }
   .copy h1 {
-    font-size: clamp(2.65rem, 11vw, 4.2rem);
+    font-size: clamp(2.65rem, 11.5vw, 4rem);
+    letter-spacing: -0.07em;
   }
   .intro {
-    font-size: 0.86rem;
+    font-size: 0.82rem;
+    padding: 5px 12px;
     margin-bottom: 12px;
-  }
-  .primary {
-    margin: 14px auto 0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
   }
   .hero-badges {
     justify-content: center;
@@ -2209,30 +2169,41 @@ dd {
     gap: 6px;
   }
   .hero-badges li {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     padding: 4px 10px;
   }
   .hero-cta-row {
     justify-content: center;
-    margin-top: 16px;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 18px;
     gap: 12px;
   }
+  .hero-cta-row .primary {
+    width: min(300px, 100%);
+    justify-content: center;
+    border-radius: 18px;
+    padding: 14px 24px;
+    font-size: 1.02rem;
+  }
   .home-vibes {
-    padding: 6px 12px;
+    padding: 7px 14px;
     font-size: 0.76rem;
   }
   .bento-grid {
     width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 9px;
   }
   .bento-card {
-    padding: 10px;
-    gap: 8px;
+    padding: 11px;
+    gap: 9px;
+    border-radius: 16px;
   }
   .bento-icon {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
     font-size: 1rem;
   }
   .bento-card h2 {
@@ -2243,14 +2214,14 @@ dd {
   }
   .privacy-line {
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     margin-top: 12px;
   }
   .hero-visual {
     grid-row: 1;
   }
   .illustration {
-    width: min(54vw, 210px);
+    width: min(50vw, 195px);
   }
   footer {
     padding: 10px 4px;
@@ -2259,64 +2230,234 @@ dd {
     flex-direction: column;
     gap: 4px;
   }
-  .gesture-radar {
-    top: 8px;
-    max-width: calc(100% - 24px);
-    padding: 5px 11px;
-    font-size: 0.74rem;
+
+  /* ---------- mobile live studio (full-bleed native camera app) ---------- */
+  .studio.is-live {
+    padding: 0;
+    background: #0e0b14;
   }
-  .stage-note,
-  .stage-hint {
-    top: 8px;
-    max-width: 92%;
-    font-size: 0.8rem;
-    padding: 6px 12px;
+  .studio.is-live .stage.live {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
-  .quickbar {
-    top: 52px;
-    transform: none;
-    left: 8px;
-    padding: 4px;
-    gap: 4px;
-    background: color-mix(in srgb, var(--mb-surface) 84%, transparent);
+  /* Floating single-row dark-frosted top bar over the full-screen camera. */
+  .studio.is-live .mast {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 8;
+    min-height: 0;
+    padding: calc(8px + env(safe-area-inset-top)) 10px 12px;
+    flex-wrap: nowrap;
+    gap: 6px;
+    background: linear-gradient(
+      to bottom,
+      rgba(12, 9, 20, 0.64) 0%,
+      rgba(12, 9, 20, 0.22) 70%,
+      rgba(12, 9, 20, 0) 100%
+    );
+    pointer-events: none;
   }
-  .tool {
-    width: 34px;
-    height: 34px;
+  .studio.is-live .mast > * {
+    pointer-events: auto;
   }
-  /* Compact scrollable right rail that never collides with radar or bottom dock. */
-  .drawer-rail {
-    top: 52px;
-    transform: none;
-    right: 8px;
-    max-height: calc(100% - 196px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 4px;
-    gap: 3px;
-    border-radius: 15px;
-    background: color-mix(in srgb, var(--mb-surface) 84%, transparent);
+  .studio.is-live .brand {
+    display: none;
   }
-  .rail-btn {
-    width: 38px;
-    height: 38px;
+  .studio.is-live .mast-right {
+    order: 1;
+    gap: 5px;
     flex-shrink: 0;
   }
+  .studio.is-live .mast-center {
+    order: 2;
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 2px 0;
+    -webkit-mask-image: linear-gradient(to right, #000 90%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 90%, transparent 100%);
+  }
+  .mast-center::-webkit-scrollbar,
+  .pills::-webkit-scrollbar,
+  .drawer-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .studio.is-live .mast-center > * {
+    flex-shrink: 0;
+  }
+  /* Translucent dark-glass pills on mobile live camera so controls feel airy & crisp. */
+  .studio.is-live .info,
+  .studio.is-live .chip,
+  .studio.is-live .mode-chip {
+    background: rgba(18, 14, 28, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+  }
+  .studio.is-live .info {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+  .studio.is-live .mode-chip {
+    padding: 2px;
+    gap: 2px;
+  }
+  .studio.is-live .mode-chip button {
+    padding: 5px 9px;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.86);
+  }
+  .studio.is-live .mode-chip button.on {
+    background: var(--mb-accent);
+    color: var(--mb-on-accent);
+  }
+  .studio.is-live .chip {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 0.74rem;
+    gap: 5px;
+  }
+  .studio.is-live .vibe-chip .dot {
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+  .studio.is-live .icon-chip {
+    width: 34px;
+    padding: 0;
+  }
+  .studio.is-live .icon-chip.on {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .studio.is-live .lite-chip.on,
+  .studio.is-live .icon-chip.lit-on {
+    background: var(--mb-accent);
+    color: var(--mb-on-accent);
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--mb-accent) 45%, transparent);
+  }
+  .lite-chip span {
+    display: none;
+  }
+
+  /* Top AI Gesture Radar right below the floating top bar. */
+  .gesture-radar {
+    top: calc(56px + env(safe-area-inset-top));
+    max-width: calc(100% - 28px);
+    padding: 5px 12px;
+    font-size: 0.74rem;
+    background: rgba(16, 12, 26, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  }
+  .gesture-radar.is-active,
+  .gesture-radar.is-charging {
+    background: var(--mb-surface);
+    color: var(--mb-text);
+    border: 1.5px solid var(--mb-line);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  }
+  .inapp-banner {
+    top: calc(56px + env(safe-area-inset-top));
+  }
+  .stage-note,
+  .stage-hint,
+  .loading-pill {
+    top: calc(56px + env(safe-area-inset-top));
+    max-width: 90%;
+    font-size: 0.8rem;
+  }
+  .rec-badge {
+    top: calc(56px + env(safe-area-inset-top));
+  }
+
+  /* Airy floating glass tool rails on mobile. */
+  .quickbar {
+    top: calc(104px + env(safe-area-inset-top));
+    transform: none;
+    left: 10px;
+    padding: 5px 4px;
+    gap: 5px;
+    border-radius: 99px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(16, 12, 26, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.24);
+  }
+  .quickbar .tool {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+  }
+  .quickbar .tool.on {
+    background: var(--mb-accent);
+    color: var(--mb-on-accent);
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .quickbar .sep {
+    background: rgba(255, 255, 255, 0.24);
+  }
+  .drawer-rail {
+    top: calc(104px + env(safe-area-inset-top));
+    transform: none;
+    right: 10px;
+    max-height: calc(
+      100dvh - 280px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+    );
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 5px 4px;
+    gap: 4px;
+    border-radius: 99px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(16, 12, 26, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  .rail-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 0;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .rail-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .rail-btn.on {
+    background: var(--mb-accent);
+    color: var(--mb-on-accent);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--mb-accent) 55%, transparent);
+  }
+
   /* Native bottom sheet with tap-outside backdrop and drag handle. */
   .drawer-backdrop {
     display: block;
     position: absolute;
     inset: 0;
     z-index: 10;
-    background: rgba(15, 10, 24, 0.35);
+    background: rgba(10, 8, 18, 0.42);
   }
   .sheet-handle {
     display: block;
-    width: 40px;
+    width: 42px;
     height: 4px;
     border-radius: 99px;
-    background: color-mix(in srgb, var(--mb-line) 35%, transparent);
-    margin: 8px auto 0;
+    background: color-mix(in srgb, var(--mb-line) 28%, transparent);
+    margin: 9px auto 2px;
     flex-shrink: 0;
   }
   .drawer-panel {
@@ -2327,41 +2468,91 @@ dd {
     z-index: 11;
     width: auto;
     min-width: 0;
-    max-height: 62dvh;
-    border-radius: 22px 22px 0 0;
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
+    max-height: 64dvh;
+    border-radius: 26px 26px 0 0;
+    border: 0;
+    border-top: 1.5px solid color-mix(in srgb, var(--mb-line) 22%, transparent);
     padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.32);
     animation-name: sheet-in;
   }
   @keyframes sheet-in {
     from {
-      transform: translateY(28px);
+      transform: translateY(32px);
       opacity: 0;
     }
   }
-  /* Native mobile bottom studio dock: fits 360px+ cleanly with prominent shutter. */
+
+  /* Swipeable single-row gesture pills carousel right above the dock. */
+  .pills {
+    left: 0;
+    right: 0;
+    transform: none;
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding: 4px 12px;
+    gap: 7px;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 3%,
+      #000 92%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 3%,
+      #000 92%,
+      transparent 100%
+    );
+  }
+  .pill {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: 6px 12px;
+    font-size: 0.74rem;
+    background: rgba(16, 12, 26, 0.56);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Signature modern floating dark-glass studio dock with hero Shutter button. */
   .dock {
-    bottom: calc(8px + env(safe-area-inset-bottom));
-    width: calc(100% - 16px);
-    max-width: 440px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: calc(100% - 20px);
+    max-width: 430px;
     justify-content: space-between;
-    align-items: stretch;
-    gap: 5px;
-    padding: 6px;
-    border-radius: 22px;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 8px;
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(16, 12, 26, 0.68);
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.36);
+  }
+  .studio[data-lite='true'] .dock {
+    background: rgba(18, 14, 28, 0.86);
   }
   .dock-layout {
     min-width: 0;
     flex: 1 1 0;
-    padding: 5px 6px;
-    border-radius: 14px;
+    padding: 7px 6px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
     text-align: center;
   }
   .dock-layout small {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
+    color: rgba(255, 255, 255, 0.68);
   }
   .dock-layout b {
     font-size: 0.74rem;
@@ -2371,71 +2562,79 @@ dd {
   }
   .dock-timer {
     min-width: 44px;
-    padding: 5px 6px;
-    border-radius: 14px;
-    font-size: 0.72rem;
+    height: 48px;
+    padding: 4px 6px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 0.7rem;
   }
   .dock-btn {
     min-width: 54px;
-    padding: 6px 8px;
-    border-radius: 15px;
-    font-size: 0.7rem;
-    gap: 1px;
+    height: 48px;
+    padding: 5px 8px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    gap: 2px;
   }
   .dock-btn.shutter-btn {
-    min-width: 66px;
-    padding: 7px 12px;
-    font-size: 0.74rem;
-    box-shadow: 0 2px 0 var(--mb-line);
+    min-width: 72px;
+    height: 56px;
+    padding: 6px 12px;
+    border-radius: 22px;
+    border: 2.5px solid #fff;
+    background: linear-gradient(135deg, var(--mb-accent), var(--mb-accent-2));
+    color: var(--mb-on-accent);
+    font-size: 0.72rem;
+    font-weight: 900;
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--mb-accent) 42%, transparent),
+      0 6px 18px rgba(0, 0, 0, 0.35);
   }
-  /* Swipeable single-row gesture pills carousel right above the dock. */
-  .pills {
-    left: 0;
-    right: 0;
-    transform: none;
-    bottom: calc(80px + env(safe-area-inset-bottom));
-    max-width: none;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
-    padding: 2px 10px;
-    gap: 6px;
+  .dock-btn.shutter-btn:active {
+    transform: scale(0.93);
   }
-  .pill {
-    flex-shrink: 0;
-    scroll-snap-align: start;
-    padding: 6px 11px;
-    font-size: 0.75rem;
+  .dock-btn.danger {
+    background: #ff3b30;
+    border-color: rgba(255, 255, 255, 0.45);
+    color: #fff;
   }
+
   .coach-0,
   .coach-1,
   .coach-2 {
     left: 50%;
     right: auto;
     top: auto;
-    bottom: calc(126px + env(safe-area-inset-bottom));
+    bottom: calc(146px + env(safe-area-inset-bottom));
     transform: translateX(-50%);
     width: min(330px, calc(100% - 24px));
     padding: 13px 15px;
+    border-radius: 20px;
   }
   .toast {
-    bottom: calc(126px + env(safe-area-inset-bottom));
+    bottom: calc(146px + env(safe-area-inset-bottom));
     max-width: calc(100% - 24px);
     font-size: 0.84rem;
+    border-radius: 16px;
   }
   dialog.debug {
     margin: auto;
     width: 94vw;
     max-height: 82dvh;
+    border-radius: 20px;
   }
   .review {
     padding: 8px;
   }
   .review-card {
-    padding: 12px 14px;
-    border-radius: 18px;
+    padding: 14px;
+    border-radius: 22px;
     max-height: 94dvh;
     overflow-y: auto;
   }
@@ -2458,7 +2657,8 @@ dd {
     padding: 8px 12px;
   }
   .photobook {
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    padding: calc(10px + env(safe-area-inset-top)) 10px
+      calc(10px + env(safe-area-inset-bottom));
   }
   .book-toolbar {
     gap: 6px;
@@ -2469,7 +2669,7 @@ dd {
   }
   .challenge-hud {
     width: min(340px, calc(100% - 24px));
-    top: 8px;
+    top: calc(56px + env(safe-area-inset-top));
     padding: 10px 12px;
   }
 }

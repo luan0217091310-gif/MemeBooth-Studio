@@ -63,8 +63,17 @@ test('mobile viewport (390x844) has no horizontal overflow and native bottom she
   await page.getByRole('button', { name: 'Bắt đầu' }).click()
   await page.getByRole('button', { name: 'Dùng không cần camera' }).click()
 
-  // Bottom dock must stay completely inside the 390px viewport.
+  // Full-bleed live stage + single-row floating header + zero overlap checks.
+  const mastBox = (await page.locator('.mast').boundingBox())!
+  const radarBox = (await page.locator('.gesture-radar').boundingBox())!
+  const railBox = (await page.locator('.drawer-rail').boundingBox())!
+  const pillsBox = (await page.locator('.pills').boundingBox())!
   const dockBox = (await page.locator('.dock').boundingBox())!
+
+  expect(mastBox.height).toBeLessThan(65)
+  expect(radarBox.y).toBeGreaterThanOrEqual(mastBox.y + mastBox.height - 8)
+  expect(railBox.y + railBox.height).toBeLessThanOrEqual(pillsBox.y + 4)
+  expect(pillsBox.y + pillsBox.height).toBeLessThanOrEqual(dockBox.y + 4)
   expect(dockBox.x).toBeGreaterThanOrEqual(0)
   expect(dockBox.x + dockBox.width).toBeLessThanOrEqual(390.5)
 
@@ -72,7 +81,7 @@ test('mobile viewport (390x844) has no horizontal overflow and native bottom she
   await page.getByRole('button', { name: 'Kho Meme' }).click()
   const sheet = page.getByRole('region', { name: 'Kho Meme' })
   await expect(sheet).toBeVisible()
-  await page.locator('.drawer-backdrop').click({ position: { x: 100, y: 60 } })
+  await page.locator('.drawer-backdrop').click({ position: { x: 100, y: 120 } })
   await expect(sheet).toBeHidden()
   expect(errors).toEqual([])
 })
