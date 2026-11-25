@@ -49,13 +49,15 @@ export async function openCamera(
     }
   }
   for (const track of stream.getVideoTracks()) track.onended = onEnded
-  // Explicit mobile Safari / Android attributes so live playback never pauses.
-  video.setAttribute('playsinline', '')
-  video.setAttribute('webkit-playsinline', '')
-  video.setAttribute('muted', '')
+  // Explicit mobile Safari / WKWebView inline attributes BEFORE setting srcObject.
+  video.setAttribute('playsinline', 'true')
+  video.setAttribute('webkit-playsinline', 'true')
+  video.setAttribute('x5-playsinline', 'true')
+  video.setAttribute('muted', 'true')
+  video.setAttribute('disablepictureinpicture', 'true')
   video.muted = true
   video.playsInline = true
-  video.autoplay = true
+  video.controls = false
   video.srcObject = stream
   await video.play()
   return stream

@@ -74,6 +74,14 @@ export const vi = {
     retry: 'Thử lại',
     noCamera: 'Dùng không cần camera',
     title: 'Cần quyền camera',
+    inAppTip:
+      'Đang mở trong Zalo/FB: bấm ⋯ góc trên phải → "Mở bằng Safari / Chrome" để camera không bị bật toàn màn hình.',
+    inAppBlockedTitle: 'Trình duyệt trong app vừa chặn camera trực tiếp',
+    inAppBlockedBody:
+      'Zalo / Facebook trên iPhone tự mở video toàn màn hình và dừng camera khi bạn thoát. Hãy bấm biểu tượng ⋯ ở góc trên phải → chọn "Mở bằng Safari" (hoặc sao chép link dán vào Safari / Chrome) để dùng mượt 100%!',
+    copyLink: 'Chép link',
+    linkCopied: 'Đã sao chép link! Hãy dán vào Safari hoặc Chrome nhé.',
+    resumeVideo: 'Tiếp tục camera',
     errors: {
       denied:
         'Bạn đã từ chối quyền camera. Bấm biểu tượng ổ khoá hoặc camera ở thanh địa chỉ, chọn Cho phép rồi bấm Thử lại.',

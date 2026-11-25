@@ -686,16 +686,38 @@ dd {
   inset: 0;
   will-change: transform;
 }
-/* Keep non-zero opacity & full box behind canvases so iOS Safari / Android never pause decoding. */
+/* Tiny non-zero opacity video so iOS decodes frames without triggering fullscreen overlays. */
 .camera-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.001;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 2px;
+  opacity: 0.01;
   pointer-events: none;
   z-index: -1;
+}
+.inapp-banner {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 48px;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 2px solid var(--mb-line);
+  border-radius: 14px;
+  background: var(--mb-surface);
+  color: var(--mb-text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.inapp-banner span {
+  flex: 1;
 }
 .layer {
   position: absolute;
@@ -2132,15 +2154,16 @@ dd {
     flex-shrink: 0;
   }
   .mode-chip button {
-    padding: 5px 11px;
-    font-size: 0.78rem;
+    padding: 5px 9px;
+    font-size: 0.74rem;
   }
   .chip {
-    padding: 6px 10px;
-    font-size: 0.78rem;
+    padding: 5px 9px;
+    font-size: 0.74rem;
+    gap: 5px;
   }
   .icon-chip {
-    padding: 7px 9px;
+    padding: 6px 8px;
   }
   .lite-chip span {
     display: none;
