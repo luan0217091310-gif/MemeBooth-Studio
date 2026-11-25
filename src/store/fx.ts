@@ -35,9 +35,11 @@ const prefersReduced =
 
 function detectLowSpec(): boolean {
   if (typeof navigator === 'undefined') return false
+  // Phones benefit hugely from 1x DPR & lower GPU/AI load (iOS Safari hides deviceMemory).
+  if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) return true
   const cores = navigator.hardwareConcurrency
   const mem = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
-  // Auto-enable lite mode on devices with <= 4 CPU threads or <= 4 GB RAM.
+  // Auto-enable lite mode on laptops/desktops with <= 4 CPU threads or <= 4 GB RAM.
   if (typeof mem === 'number' && mem > 0 && mem <= 4) return true
   if (typeof cores === 'number' && cores > 0 && cores <= 4) return true
   return false

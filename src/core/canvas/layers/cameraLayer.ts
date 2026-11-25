@@ -39,14 +39,27 @@ export class CameraLayer {
   private ctx?: CanvasRenderingContext2D
   private tex?: WebGLTexture | null
   private u?: Uniforms
-  private lastVideoTime = -1
-  private hasTexture = false
+  private videoEl: HTMLVideoElement | null = null
+  private rvfcHandle = 0
+  private rvfcActive = false
+  private frameSeq = 0
+  private uploadedSeq = -1
+  private contextLost = false
   filter: FilterParams = neutralFilter
   mirror = true
   bloomEnabled = true
   beauty = 0.25
 
   constructor(private canvas: HTMLCanvasElement) {
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault()
+      this.contextLost = true
+    })
+    canvas.addEventListener('webglcontextrestored', () => {
+      this.contextLost = false
+      if (this.gl) this.setupGl(this.gl)
+      this.uploadedSeq = -1
+    })
     const gl = canvas.getContext('webgl2', {
       alpha: false,
       antialias: false,
@@ -59,6 +72,56 @@ export class CameraLayer {
       this.ctx = canvas.getContext('2d', { alpha: false }) ?? undefined
       this.renderer = 'canvas2d'
     }
+  }
+
+  /**
+   * Uses requestVideoFrameCallback (when supported) to detect genuine new
+   * MediaStream frames without relying on `video.currentTime` (which stays
+   * stuck at 0 on iOS Safari and several Android browsers!).
+   */
+  private bindVideo(source: HTMLVideoElement): void {
+    if (this.videoEl === source) return
+    this.unbindVideo()
+    this.videoEl = source
+    this.rvfcActive = false
+    this.frameSeq = 0
+    this.uploadedSeq = -1
+    const v = source as HTMLVideoElement & {
+      requestVideoFrameCallback?: (cb: () => void) => number
+    }
+    if (typeof v.requestVideoFrameCallback === 'function') {
+      const onFrame = () => {
+        if (this.videoEl !== source) return
+        this.rvfcActive = true
+        this.frameSeq++
+        this.rvfcHandle = v.requestVideoFrameCallback!(onFrame)
+      }
+      this.rvfcHandle = v.requestVideoFrameCallback(onFrame)
+    }
+  }
+
+  private unbindVideo(): void {
+    const prev = this.videoEl as
+      | (HTMLVideoElement & {
+          cancelVideoFrameCallback?: (id: number) => void
+        })
+      | null
+    if (prev && this.rvfcHandle && prev.cancelVideoFrameCallback) {
+      try {
+        prev.cancelVideoFrameCallback(this.rvfcHandle)
+      } catch {
+        /* ignore */
+      }
+    }
+    this.videoEl = null
+    this.rvfcHandle = 0
+    this.rvfcActive = false
+    this.uploadedSeq = -1
+  }
+
+  /** Call when the video stream changes (e.g. front/rear camera switch). */
+  resetVideo(): void {
+    this.unbindVideo()
   }
 
   private setupGl(gl: WebGL2RenderingContext): boolean {
@@ -134,21 +197,23 @@ export class CameraLayer {
     const w = this.canvas.width
     const h = this.canvas.height
     const hasVideo = !!source && source.readyState >= 2 && source.videoWidth > 0
-    if (this.gl && this.u) {
+    if (this.gl && this.u && !this.contextLost) {
       const gl = this.gl
       gl.viewport(0, 0, w, h)
       if (!hasVideo) {
-        this.hasTexture = false
-        this.lastVideoTime = -1
+        this.unbindVideo()
         gl.clearColor(0.16, 0.12, 0.2, 1)
         gl.clear(gl.COLOR_BUFFER_BIT)
         return
       }
+      this.bindVideo(source)
       const u = this.u
       const f = this.filter
       gl.bindTexture(gl.TEXTURE_2D, this.tex!)
-      // Skip uploading identical video frames (webcam is ~24-30fps while rAF runs at 60fps).
-      if (!this.hasTexture || source.currentTime !== this.lastVideoTime) {
+      // Only skip texImage2D when requestVideoFrameCallback explicitly confirms
+      // no new decoded frame arrived yet; otherwise ALWAYS upload so iOS/Android never freeze.
+      const shouldUpload = !this.rvfcActive || this.frameSeq !== this.uploadedSeq
+      if (shouldUpload) {
         gl.texImage2D(
           gl.TEXTURE_2D,
           0,
@@ -157,8 +222,7 @@ export class CameraLayer {
           gl.UNSIGNED_BYTE,
           source,
         )
-        this.lastVideoTime = source.currentTime
-        this.hasTexture = true
+        this.uploadedSeq = this.frameSeq
       }
       const drawW = view.srcWidth * view.scale * dpr
       const drawH = view.srcHeight * view.scale * dpr

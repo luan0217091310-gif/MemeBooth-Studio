@@ -38,6 +38,9 @@ export class VisionClient {
   private worker?: Worker
   private mainCore?: VisionCore
   private inFlight = false
+  private inFlightSince = 0
+  private sampleCanvas: HTMLCanvasElement | null = null
+  private sampleCtx: CanvasRenderingContext2D | null = null
   private ready = false
   private disposed = false
   private lastSent = -Infinity
@@ -68,8 +71,9 @@ export class VisionClient {
 
   private get targetFps(): number {
     if (this.stats.runtime === 'main') return this.config.fallbackFps
+    if (isMobile()) return 10
     if (this.liteMode) return 14
-    return isMobile() ? this.config.mobileTargetFps : this.config.targetFps
+    return this.config.targetFps
   }
 
   start(delegate: Delegate = 'GPU', forceMain = false): void {
@@ -202,11 +206,15 @@ export class VisionClient {
 
   /** Called every render frame; sends a frame only when allowed. */
   pump(video: HTMLVideoElement, now: number): void {
-    if (!this.ready || this.paused || this.inFlight) return
+    if (!this.ready || this.paused) return
+    // Watchdog: recover if a mobile browser ever drops a createImageBitmap/worker reply.
+    if (this.inFlight && now - this.inFlightSince > 2500) this.inFlight = false
+    if (this.inFlight) return
     if (video.readyState < 2 || video.videoWidth === 0) return
     if (now - this.lastSent < 1000 / this.targetFps - 2) return
     this.lastSent = now
     this.inFlight = true
+    this.inFlightSince = now
     if (this.mainCore) {
       try {
         const result = this.mainCore.process(video, now)
@@ -217,18 +225,46 @@ export class VisionClient {
       }
       return
     }
-    const long = this.liteMode
-      ? Math.min(this.config.inferenceLongEdge, 384)
-      : this.config.inferenceLongEdge
+    const mobile = isMobile()
+    const long = mobile
+      ? Math.min(this.config.inferenceLongEdge, 320)
+      : this.liteMode
+        ? Math.min(this.config.inferenceLongEdge, 384)
+        : this.config.inferenceLongEdge
     const ratio = Math.min(
       1,
       long / Math.max(video.videoWidth, video.videoHeight),
     )
-    createImageBitmap(video, {
-      resizeWidth: Math.round(video.videoWidth * ratio),
-      resizeHeight: Math.round(video.videoHeight * ratio),
-      resizeQuality: 'low',
-    })
+    const rw = Math.max(2, Math.round(video.videoWidth * ratio))
+    const rh = Math.max(2, Math.round(video.videoHeight * ratio))
+
+    // On mobile (especially iOS Safari), downscaling onto a tiny reusable canvas
+    // avoids flaky createImageBitmap(video, { resizeWidth }) behavior.
+    let bitmapPromise: Promise<ImageBitmap>
+    if (mobile && typeof document !== 'undefined') {
+      if (!this.sampleCanvas) {
+        this.sampleCanvas = document.createElement('canvas')
+        this.sampleCtx = this.sampleCanvas.getContext('2d')
+      }
+      if (this.sampleCanvas.width !== rw || this.sampleCanvas.height !== rh) {
+        this.sampleCanvas.width = rw
+        this.sampleCanvas.height = rh
+      }
+      if (this.sampleCtx) {
+        this.sampleCtx.drawImage(video, 0, 0, rw, rh)
+        bitmapPromise = createImageBitmap(this.sampleCanvas)
+      } else {
+        bitmapPromise = createImageBitmap(video)
+      }
+    } else {
+      bitmapPromise = createImageBitmap(video, {
+        resizeWidth: rw,
+        resizeHeight: rh,
+        resizeQuality: 'low',
+      })
+    }
+
+    bitmapPromise
       .then((bitmap) => {
         if (this.disposed || !this.worker) {
           bitmap.close()

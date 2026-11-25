@@ -213,6 +213,11 @@ export class StageEngine {
   private externallyPaused = false
   private onVisibility = () => {
     this.vision?.setPaused(document.hidden || this.externallyPaused)
+    // Mobile Safari/Chrome pause <video> when backgrounded; resume seamlessly on return.
+    if (!document.hidden && this.stream && this.el.video.paused) {
+      void this.el.video.play().catch(() => undefined)
+      this.cameraLayer.resetVideo()
+    }
   }
 
   /** Stops inference (e.g. while the Photo Book is open). */
@@ -259,6 +264,7 @@ export class StageEngine {
     })
     try {
       stopStream(this.stream)
+      this.cameraLayer.resetVideo()
       this.stream = await openCamera(
         this.el.video,
         () => {
@@ -773,6 +779,7 @@ export class StageEngine {
     window.clearTimeout(this.loadTimer)
     this.loop.stop()
     this.stopVision()
+    this.cameraLayer.resetVideo()
     stopStream(this.stream)
     this.stream = null
     this.resizeObserver?.disconnect()

@@ -22,12 +22,18 @@ export async function openCamera(
     throw Object.assign(new Error(), { name: 'Insecure' })
   if (!navigator.mediaDevices?.getUserMedia)
     throw Object.assign(new Error(), { name: 'Unsupported' })
+  const isPortraitMobile =
+    typeof window !== 'undefined' &&
+    typeof navigator !== 'undefined' &&
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) &&
+    window.innerHeight > window.innerWidth
+
   const makeConstraints = (mode: CameraFacing): MediaStreamConstraints => ({
     audio: false,
     video: {
       facingMode: { ideal: mode },
-      width: { ideal: liteMode ? 960 : 1280 },
-      height: { ideal: liteMode ? 540 : 720 },
+      width: { ideal: isPortraitMobile ? 640 : liteMode ? 960 : 1280 },
+      height: { ideal: isPortraitMobile ? 854 : liteMode ? 540 : 720 },
       frameRate: { ideal: liteMode ? 24 : 30 },
     },
   })
@@ -43,9 +49,14 @@ export async function openCamera(
     }
   }
   for (const track of stream.getVideoTracks()) track.onended = onEnded
-  video.srcObject = stream
+  // Explicit mobile Safari / Android attributes so live playback never pauses.
+  video.setAttribute('playsinline', '')
+  video.setAttribute('webkit-playsinline', '')
+  video.setAttribute('muted', '')
   video.muted = true
   video.playsInline = true
+  video.autoplay = true
+  video.srcObject = stream
   await video.play()
   return stream
 }

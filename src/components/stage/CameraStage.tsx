@@ -57,6 +57,7 @@ export function CameraStage() {
       <video
         ref={video}
         className="camera-video"
+        autoPlay
         muted
         playsInline
         aria-hidden
