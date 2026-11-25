@@ -5,27 +5,27 @@ export const visionConfig = {
   faceModel: './mediapipe/models/face_landmarker.task',
   numHands: 2,
   numFaces: 1,
-  minHandDetectionConfidence: 0.6,
-  minHandPresenceConfidence: 0.5,
-  minTrackingConfidence: 0.5,
+  minHandDetectionConfidence: 0.5,
+  minHandPresenceConfidence: 0.45,
+  minTrackingConfidence: 0.45,
   /** Long edge of frames sent to inference. */
   inferenceLongEdge: 480,
   targetFps: 18,
-  mobileTargetFps: 11,
-  fallbackFps: 11,
+  mobileTargetFps: 12,
+  fallbackFps: 12,
   /** If avg inference ms is below this, run both models every tick. */
   bothModelsBudgetMs: 22,
   /** Keep last hand state this long before treating the hand as lost. */
-  handLossGraceMs: 300,
+  handLossGraceMs: 320,
   faceLossGraceMs: 500,
   loadTimeoutMs: 10_000,
 }
 
 export const smoothingConfig = {
-  minCutoff: 1.0,
-  beta: 0.007,
+  minCutoff: 1.3,
+  beta: 0.015,
   dCutoff: 1.0,
-  scoreAlpha: 0.3,
+  scoreAlpha: 0.45,
 }
 
 export const gestureConfig = {
@@ -33,20 +33,20 @@ export const gestureConfig = {
   fingerRatio: { curled: 1.0, extended: 1.25 },
   pinchEnter: 0.25,
   pinchExit: 0.35,
-  activeScore: 0.6,
+  activeScore: 0.58,
 }
 
 export const faceConfig = {
-  alpha: 0.3,
-  winkDiff: 0.45,
-  winkOther: 0.3,
-  mouthOpen: { enter: 0.65, exit: 0.5 },
-  smile: { enter: 0.6, exit: 0.45 },
-  pucker: { enter: 0.6, exit: 0.45 },
-  browUp: { enter: 0.6, exit: 0.45 },
-  cheekPuff: { enter: 0.55, exit: 0.4 },
+  alpha: 0.45,
+  winkDiff: 0.35,
+  winkOther: 0.35,
+  mouthOpen: { enter: 0.48, exit: 0.34 },
+  smile: { enter: 0.48, exit: 0.34 },
+  pucker: { enter: 0.45, exit: 0.32 },
+  browUp: { enter: 0.42, exit: 0.28 },
+  cheekPuff: { enter: 0.4, exit: 0.26 },
   /** Max fingertip distance (in hand sizes) to count as touching. */
-  heartTouch: 0.5,
+  heartTouch: 0.62,
 }
 
 export const drawConfig = {

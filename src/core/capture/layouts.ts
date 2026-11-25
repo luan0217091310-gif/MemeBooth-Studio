@@ -74,7 +74,7 @@ interface FrameStyle {
   ink: string
   accent: string
   /** Extra decoration drawn on the background. */
-  deco: 'dots' | 'chrome' | 'tape' | 'neon'
+  deco: 'dots' | 'chrome' | 'tape' | 'neon' | 'film' | 'dream'
 }
 
 export const frameStyles: Record<FrameId, FrameStyle> = {
@@ -101,6 +101,18 @@ export const frameStyles: Record<FrameId, FrameStyle> = {
     ink: '#eef0ff',
     accent: '#39ff14',
     deco: 'neon',
+  },
+  'frame-film': {
+    bg: '#f7f1e8',
+    ink: '#2c2420',
+    accent: '#e79e7e',
+    deco: 'film',
+  },
+  'frame-dream': {
+    bg: '#13152e',
+    ink: '#f4f3ff',
+    accent: '#c084fc',
+    deco: 'dream',
   },
 }
 
@@ -151,6 +163,7 @@ export function composeLayout(
   shots: readonly HTMLCanvasElement[],
   frame: FrameId,
   date = new Date(),
+  customLabel = '',
 ): HTMLCanvasElement {
   const style = frameStyles[frame] ?? frameStyles['frame-kawaii']!
   const c = document.createElement('canvas')
@@ -175,15 +188,29 @@ export function composeLayout(
     g.addColorStop(1, '#eef2f6')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, c.width, c.height)
+  } else if (style.deco === 'dream') {
+    const g = ctx.createLinearGradient(0, 0, c.width, c.height)
+    g.addColorStop(0, '#171436')
+    g.addColorStop(0.5, '#2c1f5e')
+    g.addColorStop(1, '#12274a')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, c.width, c.height)
+  } else if (style.deco === 'film') {
+    ctx.fillStyle = 'rgba(231, 158, 126, 0.16)'
+    for (let y = 30; y < c.height; y += 84) {
+      ctx.fillRect(14, y, 22, 34)
+      ctx.fillRect(c.width - 36, y, 22, 34)
+    }
   }
   layout.cells.forEach((cell, i) => {
     const shot = shots[i] ?? shots[shots.length - 1]
     if (!shot) return
     drawCover(ctx, shot, cell)
     if (layout.id === 'single') return
-    ctx.lineWidth = style.deco === 'neon' ? 6 : 4
-    ctx.strokeStyle = style.deco === 'neon' ? style.accent : style.ink
-    if (style.deco === 'neon') {
+    const glowing = style.deco === 'neon' || style.deco === 'dream'
+    ctx.lineWidth = glowing ? 5 : 3
+    ctx.strokeStyle = glowing ? style.accent : style.ink
+    if (glowing) {
       ctx.shadowColor = style.accent
       ctx.shadowBlur = 18
     }
@@ -198,7 +225,8 @@ export function composeLayout(
       ctx.restore()
     }
   })
-  // Label: date + small "MemeBooth".
+  // Label: custom title (or "MemeBooth") + date stamp.
+  const title = customLabel.trim() || 'MemeBooth'
   const L = layout.label
   const big = Math.min(L.h * 0.42, 96)
   ctx.fillStyle = layout.id === 'single' ? 'rgba(0,0,0,0.45)' : 'transparent'
@@ -207,7 +235,7 @@ export function composeLayout(
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.font = '900 ' + big + 'px "Be Vietnam Pro", sans-serif'
-  ctx.fillText('MemeBooth', L.x + L.w / 2, L.y + L.h * 0.38)
+  ctx.fillText(title, L.x + L.w / 2, L.y + L.h * 0.38, L.w - 40)
   ctx.font = '700 ' + big * 0.42 + 'px "Be Vietnam Pro", sans-serif'
   ctx.fillStyle =
     layout.id === 'single'

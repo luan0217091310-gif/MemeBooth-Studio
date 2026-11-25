@@ -69,6 +69,7 @@ export function visibleRect(v: Viewport) {
 }
 
 export const MAX_DPR = 2
-export function stageDpr(): number {
+export function stageDpr(liteMode = false): number {
+  if (liteMode) return 1
   return Math.min(globalThis.devicePixelRatio || 1, MAX_DPR)
 }

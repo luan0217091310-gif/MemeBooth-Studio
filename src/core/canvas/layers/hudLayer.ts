@@ -39,6 +39,8 @@ export interface HudInput {
   trashSize: number
   trashInset: number
   debug: boolean
+  /** Optional user-facing skeleton overlay to verify hand tracking. */
+  showSkeleton?: boolean
   /** Meme about to fire (hold progress 0..1). */
   pending: { name: string; progress: number } | null
   /** Mic level 0..1, or -1 when sound-reactive is off. */
@@ -53,6 +55,7 @@ export interface HudInput {
  */
 export class HudLayer {
   private ctx: CanvasRenderingContext2D | null
+  private dirty = true
   constructor(private canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d')
   }
@@ -61,18 +64,32 @@ export class HudLayer {
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.canvas.width = width
       this.canvas.height = height
+      this.dirty = true
     }
   }
 
   draw(view: Viewport, dpr: number, input: HudInput): void {
     const ctx = this.ctx
     if (!ctx) return
+    const { snapshot, debug, hud } = input
+    const showSkel = debug || !!input.showSkeleton
+    const active =
+      showSkel ||
+      hud.highlight.size > 0 ||
+      hud.trash.visible ||
+      !!input.pending ||
+      input.micLevel >= 0 ||
+      !!input.dwell ||
+      hud.cursors.length > 0
+    if (!active && !this.dirty) return
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    this.dirty = active
+    if (!active) return
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    const { snapshot, debug } = input
-    if (debug) {
-      ctx.lineWidth = 2
+    if (showSkel) {
+      ctx.lineWidth = 2.2
+      ctx.lineCap = 'round'
       for (const hand of snapshot.hands) {
         const lm = hand.landmarks
         ctx.strokeStyle =
@@ -90,25 +107,38 @@ export class HudLayer {
           ctx.lineTo(tmpB.x, tmpB.y)
         }
         ctx.stroke()
-        const wrist = lm[0]
-        if (wrist) {
-          toPixel(view, wrist, tmpA)
-          ctx.fillStyle = '#fff'
-          ctx.font = '600 13px "Be Vietnam Pro", sans-serif'
-          ctx.fillText(hand.handedness, tmpA.x + 8, tmpA.y + 16)
-        }
-      }
-      ctx.fillStyle = 'rgba(255,181,216,0.9)'
-      for (const face of snapshot.faces) {
-        for (const i of FACE_KEYPOINTS) {
-          const p = face.landmarks[i]
+        // Crisp fingertip dots so users clearly see gesture alignment.
+        ctx.fillStyle = '#fff'
+        for (const tip of [4, 8, 12, 16, 20]) {
+          const p = lm[tip]
           if (!p) continue
           toPixel(view, p, tmpA)
-          ctx.fillRect(tmpA.x - 2, tmpA.y - 2, 4, 4)
+          ctx.beginPath()
+          ctx.arc(tmpA.x, tmpA.y, 4, 0, Math.PI * 2)
+          ctx.fill()
+        }
+        if (debug) {
+          const wrist = lm[0]
+          if (wrist) {
+            toPixel(view, wrist, tmpA)
+            ctx.fillStyle = '#fff'
+            ctx.font = '600 13px "Be Vietnam Pro", sans-serif'
+            ctx.fillText(hand.handedness, tmpA.x + 8, tmpA.y + 16)
+          }
+        }
+      }
+      if (debug) {
+        ctx.fillStyle = 'rgba(255,181,216,0.9)'
+        for (const face of snapshot.faces) {
+          for (const i of FACE_KEYPOINTS) {
+            const p = face.landmarks[i]
+            if (!p) continue
+            toPixel(view, p, tmpA)
+            ctx.fillRect(tmpA.x - 2, tmpA.y - 2, 4, 4)
+          }
         }
       }
     }
-    const { hud } = input
     // Outline hovered / grabbed items.
     if (hud.highlight.size) {
       ctx.save()
@@ -264,14 +294,19 @@ export class HudLayer {
     ctx.save()
     ctx.lineWidth = 3
     ctx.strokeStyle = '#fff'
-    ctx.shadowColor = 'rgba(0,0,0,0.45)'
-    ctx.shadowBlur = 4
     switch (c.kind) {
       case 'pen':
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, r * 0.55 + 1.5, 0, Math.PI * 2)
+        ctx.strokeStyle = 'rgba(0,0,0,0.45)'
+        ctx.lineWidth = 2
+        ctx.stroke()
         ctx.beginPath()
         ctx.arc(p.x, p.y, r * 0.55, 0, Math.PI * 2)
         ctx.fillStyle = c.color
         ctx.fill()
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 2.5
         ctx.stroke()
         break
       case 'erase': {

@@ -23,6 +23,7 @@ type Uniforms = Record<
   | 'uScanline'
   | 'uChroma'
   | 'uBloom'
+  | 'uBeauty'
   | 'uTime'
   | 'uResolution',
   WebGLUniformLocation | null
@@ -38,9 +39,12 @@ export class CameraLayer {
   private ctx?: CanvasRenderingContext2D
   private tex?: WebGLTexture | null
   private u?: Uniforms
+  private lastVideoTime = -1
+  private hasTexture = false
   filter: FilterParams = neutralFilter
   mirror = true
   bloomEnabled = true
+  beauty = 0.25
 
   constructor(private canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2', {
@@ -103,6 +107,7 @@ export class CameraLayer {
       'uScanline',
       'uChroma',
       'uBloom',
+      'uBeauty',
       'uTime',
       'uResolution',
     ] as const
@@ -133,6 +138,8 @@ export class CameraLayer {
       const gl = this.gl
       gl.viewport(0, 0, w, h)
       if (!hasVideo) {
+        this.hasTexture = false
+        this.lastVideoTime = -1
         gl.clearColor(0.16, 0.12, 0.2, 1)
         gl.clear(gl.COLOR_BUFFER_BIT)
         return
@@ -140,14 +147,19 @@ export class CameraLayer {
       const u = this.u
       const f = this.filter
       gl.bindTexture(gl.TEXTURE_2D, this.tex!)
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGBA,
-        gl.RGBA,
-        gl.UNSIGNED_BYTE,
-        source,
-      )
+      // Skip uploading identical video frames (webcam is ~24-30fps while rAF runs at 60fps).
+      if (!this.hasTexture || source.currentTime !== this.lastVideoTime) {
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.RGBA,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          source,
+        )
+        this.lastVideoTime = source.currentTime
+        this.hasTexture = true
+      }
       const drawW = view.srcWidth * view.scale * dpr
       const drawH = view.srcHeight * view.scale * dpr
       gl.uniform2f(u.uScale, drawW / w, drawH / h)
@@ -162,6 +174,7 @@ export class CameraLayer {
       gl.uniform1f(u.uScanline, f.scanline)
       gl.uniform1f(u.uChroma, f.chromaShift)
       gl.uniform1f(u.uBloom, this.bloomEnabled ? f.bloom : 0)
+      gl.uniform1f(u.uBeauty, this.beauty)
       gl.uniform1f(u.uTime, (time % 10000) / 1000)
       gl.uniform2f(u.uResolution, w, h)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
@@ -175,7 +188,7 @@ export class CameraLayer {
       ctx.fillRect(0, 0, w, h)
       return
     }
-    ctx.filter = cssFilter(this.filter)
+    ctx.filter = cssFilter(this.filter, this.beauty)
     const drawW = view.srcWidth * view.scale * dpr
     const drawH = view.srcHeight * view.scale * dpr
     const x = view.offsetX * dpr

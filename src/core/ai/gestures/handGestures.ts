@@ -61,6 +61,66 @@ export function classifyGeometry(
   out.TWO_FINGER = state.pinch ? 0 : two
 }
 
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
+
+/**
+ * Geometry-based recognition for meme hand gestures, fused with MediaPipe's
+ * built-in GestureRecognizer so gestures stay responsive even at angles or
+ * dim lighting where the neural classifier fluctuates.
+ */
+export function classifyMemeGestures(
+  lm: readonly Vec2[],
+  aspect = 1,
+): Partial<Record<HandGestureId, number>> {
+  const out: Partial<Record<HandGestureId, number>> = {}
+  if (lm.length < 21) return out
+  const size = handSize(lm, aspect)
+  const index = extension(lm, 8, 6, aspect)
+  const middle = extension(lm, 12, 10, aspect)
+  const ring = extension(lm, 16, 14, aspect)
+  const pinky = extension(lm, 20, 18, aspect)
+
+  const allFourExtended = Math.min(index, middle, ring, pinky)
+  const allFourCurled = 1 - Math.max(index, middle, ring, pinky)
+
+  // Thumb geometry relative to palm & index knuckle.
+  const thumbSpan = dist(lm[4]!, lm[5]!, aspect) / size
+  const thumbAcross = dist(lm[4]!, lm[17]!, aspect) / size
+  const thumbOut = clamp01((thumbSpan - 0.42) / 0.18)
+  const thumbTucked = clamp01((0.72 - thumbSpan) / 0.25)
+
+  // Vertical direction of thumb tip (y increases downward in display space).
+  const dyTipToIp = (lm[3]!.y - lm[4]!.y) * aspect
+  const dyTipToIndex = (lm[5]!.y - lm[4]!.y) * aspect
+  const thumbUpDir = clamp01(
+    Math.min(dyTipToIp / (0.18 * size), dyTipToIndex / (0.22 * size)),
+  )
+  const thumbDownDir = clamp01(
+    Math.min(-dyTipToIp / (0.18 * size), -dyTipToIndex / (0.22 * size)),
+  )
+
+  // 👍 Thumb Up: 4 fingers curled, thumb clearly pointing up.
+  out.THUMB_UP = Math.min(allFourCurled, thumbOut, thumbUpDir) * 0.9
+  // 👎 Thumb Down: 4 fingers curled, thumb clearly pointing down.
+  out.THUMB_DOWN = Math.min(allFourCurled, thumbOut, thumbDownDir) * 0.9
+  // ✊ Fist: 4 fingers tightly curled, thumb not sticking vertically up/down.
+  const thumbNeutral = 1 - Math.max(thumbUpDir, thumbDownDir)
+  out.FIST = Math.min(allFourCurled, Math.max(thumbTucked, thumbNeutral * 0.85)) * 0.88
+  // ✌️ Victory: index & middle extended, ring & pinky curled, slight V spread.
+  const vSpread = dist(lm[8]!, lm[12]!, aspect) / size
+  const spreadOk = clamp01((vSpread - 0.2) / 0.22)
+  out.VICTORY =
+    Math.min(index, middle, 1 - Math.max(ring, pinky), spreadOk) * 0.9
+  // 🖐️ Open Palm: all 4 fingers extended and thumb open away from pinky base.
+  const palmThumbOpen = clamp01((thumbAcross - 0.85) / 0.35)
+  out.OPEN_PALM = Math.min(allFourExtended, palmThumbOpen) * 0.88
+  // 🤟 I Love You: index + pinky extended, middle + ring curled, thumb out.
+  out.I_LOVE_YOU =
+    Math.min(index, pinky, 1 - Math.max(middle, ring), thumbOut) * 0.92
+
+  return out
+}
+
 export type DominantGesture =
   'POINT' | 'PINCH' | 'TWO_FINGER' | 'OPEN_PALM' | 'NONE'
 

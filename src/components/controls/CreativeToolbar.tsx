@@ -95,28 +95,38 @@ export function TextModal(props: { onClose(): void }) {
   )
 }
 
-/** Always-visible quick actions (left): pen/eraser, undo/redo, clear. */
+/** Quick tools (left): full pen/eraser in manual draw mode, compact undo/clear when items exist. */
 export function QuickBar() {
   const s = useScene()
+  const hasContent =
+    s.strokes.length > 0 ||
+    s.items.length > 0 ||
+    s.past.length > 0 ||
+    s.future.length > 0
+  if (s.mode !== 'draw' && !hasContent) return null
   return (
     <aside className="quickbar" aria-label={vi.draw.tools}>
-      <button
-        className={'tool ' + (s.tool === 'pen' ? 'on' : '')}
-        aria-label={vi.draw.pen}
-        aria-pressed={s.tool === 'pen'}
-        onClick={() => s.setTool('pen')}
-      >
-        <Pencil size={18} />
-      </button>
-      <button
-        className={'tool ' + (s.tool === 'eraser' ? 'on' : '')}
-        aria-label={vi.draw.eraser}
-        aria-pressed={s.tool === 'eraser'}
-        onClick={() => s.setTool('eraser')}
-      >
-        <Eraser size={18} />
-      </button>
-      <span className="sep" />
+      {s.mode === 'draw' && (
+        <>
+          <button
+            className={'tool ' + (s.tool === 'pen' ? 'on' : '')}
+            aria-label={vi.draw.pen}
+            aria-pressed={s.tool === 'pen'}
+            onClick={() => s.setTool('pen')}
+          >
+            <Pencil size={18} />
+          </button>
+          <button
+            className={'tool ' + (s.tool === 'eraser' ? 'on' : '')}
+            aria-label={vi.draw.eraser}
+            aria-pressed={s.tool === 'eraser'}
+            onClick={() => s.setTool('eraser')}
+          >
+            <Eraser size={18} />
+          </button>
+          <span className="sep" />
+        </>
+      )}
       <button
         className="tool"
         aria-label={vi.draw.undo}
@@ -159,7 +169,10 @@ export function BrushPanel() {
               'brush-tile ' + (s.brushId === id && s.tool === 'pen' ? 'on' : '')
             }
             aria-pressed={s.brushId === id && s.tool === 'pen'}
-            onClick={() => s.setBrush(id)}
+            onClick={() => {
+              s.setBrush(id)
+              s.setMode('draw')
+            }}
           >
             <i className="brush" data-brush={id} />
             <span>{vi.draw.brushes[id]}</span>

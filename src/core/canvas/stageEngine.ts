@@ -91,10 +91,17 @@ export class StageEngine {
   private dwellEl: Element | null = null
   private dwellSince = 0
   private dwellCooldown = 0
+  private dwellLastHit = 0
   private dwellRing: { x: number; y: number; progress: number } | null = null
   private lastLightCheck = 0
   private lowLight = false
   private lumaCanvas: HTMLCanvasElement | null = null
+  private lastLiteMode = false
+  private lastMicLevel = 0
+  private lastRadarSig = ''
+  private pendingInfo: { name: string; progress: number } | null = null
+  private handShutterSince = -1
+  private handShutterCooldown = 0
   private hudLayer: HudLayer
   private stream: MediaStream | null = null
   private vision?: VisionClient
@@ -194,7 +201,8 @@ export class StageEngine {
 
   private resize(): void {
     const rect = this.el.root.getBoundingClientRect()
-    this.dpr = stageDpr()
+    this.lastLiteMode = useFx.getState().liteMode
+    this.dpr = stageDpr(this.lastLiteMode)
     const w = Math.max(1, Math.round(rect.width * this.dpr))
     const h = Math.max(1, Math.round(rect.height * this.dpr))
     this.cameraLayer.resize(w, h)
@@ -223,9 +231,13 @@ export class StageEngine {
     set({ camera: 'requesting', cameraError: undefined })
     try {
       stopStream(this.stream)
-      this.stream = await openCamera(this.el.video, () => {
-        if (!this.disposed) set({ camera: 'ended' })
-      })
+      this.stream = await openCamera(
+        this.el.video,
+        () => {
+          if (!this.disposed) set({ camera: 'ended' })
+        },
+        useFx.getState().liteMode,
+      )
       if (this.disposed) return stopStream(this.stream)
       this.el.video.onresize = () => this.resize()
       this.resize()
@@ -273,6 +285,7 @@ export class StageEngine {
       },
     })
     this.vision = client
+    client.setLiteMode(useFx.getState().liteMode)
     client.start(delegate, forceMain)
   }
 
@@ -337,11 +350,17 @@ export class StageEngine {
       this.challenge?.onHit(f.score)
     }
 
-    // Adaptive quality + reduced motion.
+    // Adaptive quality + reduced motion + lite mode.
+    if (fxState.liteMode !== this.lastLiteMode) {
+      this.resize()
+      this.vision?.setLiteMode(fxState.liteMode)
+    }
     this.fx.reducedMotion = fxState.reducedMotion
     this.fx.reduceFlash = fxState.reduceFlash
     const targetDensity =
-      (this.loop.stats.degraded ? 0.4 : 1) * (fxState.reducedMotion ? 0.5 : 1)
+      (this.loop.stats.degraded ? 0.4 : 1) *
+      (fxState.reducedMotion ? 0.5 : 1) *
+      (fxState.liteMode ? 0.5 : 1)
     this.fx.emitters.density +=
       (targetDensity - this.fx.emitters.density) * 0.02
     this.fx.update(dt, now, aspect)
@@ -367,9 +386,11 @@ export class StageEngine {
     this.updateDwell(snapshot, now)
     if (now - this.lastLightCheck > 1000) {
       this.lastLightCheck = now
-      this.checkHints(video, snapshot.hands.length, now)
+      this.checkHints(video)
     }
-    this.cameraLayer.bloomEnabled = !this.loop.stats.degraded
+    this.cameraLayer.bloomEnabled =
+      !this.loop.stats.degraded && !fxState.liteMode
+    this.cameraLayer.beauty = fxState.beauty
     this.cameraLayer.draw(video, this.view, this.dpr, now)
     this.creativeLayer.active = this.controller.activeStrokes
     this.creativeLayer.draw(this.view, this.dpr)
@@ -383,9 +404,39 @@ export class StageEngine {
       now,
       vi.testLabel,
     )
+    // Optional hands-free auto-shutter: hold ✌️ for 0.85s to snap a photo.
+    let shutterPending: { name: string; progress: number } | null = null
+    if (
+      fxState.handShutter &&
+      !this.capture.busy &&
+      !this.challenge &&
+      now >= this.handShutterCooldown
+    ) {
+      const victory = snapshot.hands.some((h) => (h.gestures.VICTORY ?? 0) >= 0.65)
+      if (victory) {
+        if (this.handShutterSince < 0) this.handShutterSince = now
+        const p = (now - this.handShutterSince) / 850
+        if (p >= 1) {
+          this.handShutterSince = -1
+          this.handShutterCooldown = now + 4000
+          void this.capture.startPhoto()
+        } else {
+          shutterPending = { name: vi.fx.handShutterHold, progress: p }
+        }
+      } else {
+        this.handShutterSince = -1
+      }
+    } else {
+      this.handShutterSince = -1
+    }
     const pendingMeme = result.pending
       ? useMemes.getState().byRule(result.pending.ruleId)
       : undefined
+    this.pendingInfo =
+      shutterPending ??
+      (result.pending && pendingMeme
+        ? { name: pendingMeme.name, progress: result.pending.progress }
+        : null)
     this.hudLayer.draw(this.view, this.dpr, {
       snapshot,
       hud: this.controller.hud,
@@ -393,10 +444,8 @@ export class StageEngine {
       trashSize: this.controller.trashRect.size,
       trashInset: this.controller.trashRect.inset,
       debug,
-      pending:
-        result.pending && pendingMeme
-          ? { name: pendingMeme.name, progress: result.pending.progress }
-          : null,
+      showSkeleton: fxState.showSkeleton,
+      pending: this.pendingInfo,
       micLevel: fxState.soundReactive ? this.mic.level : -1,
       dwell: this.dwellRing,
     })
@@ -438,15 +487,20 @@ export class StageEngine {
       return
     }
     const px = toPixel(this.view, tip)
-    const rect = this.el.root.getBoundingClientRect()
-    const target =
-      document
-        .elementFromPoint(rect.left + px.x, rect.top + px.y)
-        ?.closest('[data-dwell]') ?? null
-    if (target !== this.dwellEl) {
-      this.dwellEl = target
-      this.dwellSince = now
+    // Throttle DOM layout/hit-test to ~10 Hz to avoid per-frame reflows.
+    if (now - this.dwellLastHit >= 100 || !this.dwellEl) {
+      this.dwellLastHit = now
+      const rect = this.el.root.getBoundingClientRect()
+      const target =
+        document
+          .elementFromPoint(rect.left + px.x, rect.top + px.y)
+          ?.closest('[data-dwell]') ?? null
+      if (target !== this.dwellEl) {
+        this.dwellEl = target
+        this.dwellSince = now
+      }
     }
+    const target = this.dwellEl
     if (!target || (target as HTMLButtonElement).disabled) return
     const progress = (now - this.dwellSince) / DWELL_MS
     this.dwellRing = { x: px.x, y: px.y, progress: Math.min(1, progress) }
@@ -457,12 +511,8 @@ export class StageEngine {
     }
   }
 
-  /** Low-light warning and "show your hand" hint (checked once a second). */
-  private checkHints(
-    video: HTMLVideoElement | null,
-    hands: number,
-    now: number,
-  ): void {
+  /** Low-light warning (checked once a second). */
+  private checkHints(video: HTMLVideoElement | null): void {
     let hint: Hint = null
     if (video && video.readyState >= 2) {
       this.lumaCanvas ??= document.createElement('canvas')
@@ -481,13 +531,6 @@ export class StageEngine {
         this.lowLight = this.lowLight ? luma < 60 : luma < 45
       }
       if (this.lowLight) hint = 'lowLight'
-      else if (
-        useScene.getState().mode === 'draw' &&
-        useStage.getState().vision === 'ready' &&
-        hands === 0 &&
-        this.tracker.handAge(now) > 5000
-      )
-        hint = 'showHand'
     }
     if (useUi.getState().hint !== hint) useUi.getState().setHint(hint)
   }
@@ -508,6 +551,7 @@ export class StageEngine {
       props: this.props,
       activeStrokes: this.controller.activeStrokes,
       filter: this.cameraLayer.filter,
+      beauty: this.cameraLayer.beauty,
       mirror: this.cameraLayer.mirror,
       shake: this.fx.shake,
     }
@@ -594,10 +638,65 @@ export class StageEngine {
   }
 
   private publish(hands: number, faces: number): void {
-    const stats = this.vision?.stats
+    const debug = useSession.getState().debug
     const snapshot = this.tracker.snapshot
-    useStage.getState().set({
-      perf: {
+
+    // Compute compact active gesture radar (updates React ONLY when something changes).
+    let topId: string | null = null
+    let topScore = 0
+    const active: string[] = []
+    for (const h of snapshot.hands) {
+      for (const [id, v] of Object.entries(h.gestures)) {
+        if (v === undefined || id === 'POINT' || id === 'TWO_FINGER') continue
+        if (v >= 0.52) {
+          if (!active.includes(id)) active.push(id)
+          if (v > topScore) {
+            topScore = v
+            topId = id
+          }
+        }
+      }
+    }
+    for (const [id, v] of Object.entries(snapshot.derived)) {
+      if (v === undefined) continue
+      if (v >= 0.52) {
+        if (!active.includes(id)) active.push(id)
+        if (v > topScore) {
+          topScore = v
+          topId = id
+        }
+      }
+    }
+    active.sort()
+    const activeKey = active.join(',')
+    const pBucket = this.pendingInfo
+      ? this.pendingInfo.name + ':' + Math.round(this.pendingInfo.progress * 20)
+      : ''
+    const radarSig =
+      activeKey + '|' + (topId ?? '') + '|' + pBucket + '|' + hands + '|' + faces
+
+    const patch: Partial<
+      Omit<ReturnType<typeof useStage.getState>, 'set'>
+    > = {}
+    if (radarSig !== this.lastRadarSig) {
+      this.lastRadarSig = radarSig
+      patch.radar = {
+        activeKey,
+        topId,
+        pending: this.pendingInfo
+          ? {
+              name: this.pendingInfo.name,
+              progress: this.pendingInfo.progress,
+            }
+          : null,
+        hands,
+        faces,
+      }
+    }
+
+    if (debug) {
+      const stats = this.vision?.stats
+      patch.perf = {
         fps: this.loop.stats.fps,
         p95: this.loop.stats.p95,
         inferenceFps: stats?.inferenceFps ?? 0,
@@ -609,16 +708,23 @@ export class StageEngine {
         hands,
         faces,
         handLabels: snapshot.hands.map((h) => h.handedness).join(', '),
-      },
-      live: {
+      }
+      patch.live = {
         derived: { ...snapshot.derived },
         blendshapes: snapshot.faces[0]?.blendshapes ?? {},
         scores: this.comboScores,
         gestures: snapshot.hands.map((h) => ({ ...h.gestures })),
         particles: this.fx.pool.alive,
-      },
-    })
-    useFx.getState().set({ micLevel: this.mic.level })
+      }
+    }
+
+    if (patch.radar || patch.perf || patch.live) useStage.getState().set(patch)
+
+    const nextMic = this.mic.level
+    if (nextMic !== this.lastMicLevel) {
+      this.lastMicLevel = nextMic
+      useFx.getState().set({ micLevel: nextMic })
+    }
   }
 
   dispose(): void {

@@ -6,10 +6,10 @@ import type {
   TriggerRule,
 } from '@/types'
 
-export const DEFAULT_HAND_MIN = 0.7
-export const DEFAULT_DERIVED_MIN = 0.55
+export const DEFAULT_HAND_MIN = 0.58
+export const DEFAULT_DERIVED_MIN = 0.52
 /** A single rule that is a subset of an accumulating combo waits this long. */
-export const SUBSET_DEFER_MS = 300
+export const SUBSET_DEFER_MS = 280
 
 export interface RuleState {
   /** When all conditions started being true together (hold), or -1. */

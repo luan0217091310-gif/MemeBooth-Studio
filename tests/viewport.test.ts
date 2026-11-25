@@ -1,5 +1,10 @@
 import { expect, it } from 'vitest'
-import { createViewport, fromPixel, toPixel } from '@/core/canvas/viewport'
+import {
+  createViewport,
+  fromPixel,
+  stageDpr,
+  toPixel,
+} from '@/core/canvas/viewport'
 
 it('maps display space through a cover crop and back', () => {
   // 16:9 camera into a tall 9:16 stage: sides are cropped.
@@ -20,4 +25,10 @@ it('maps display space through a cover crop and back', () => {
     expect(back.x).toBeCloseTo(p.x, 6)
     expect(back.y).toBeCloseTo(p.y, 6)
   }
+})
+
+it('caps stageDpr to 1 in lite mode', () => {
+  expect(stageDpr(true)).toBe(1)
+  expect(stageDpr(false)).toBeGreaterThanOrEqual(1)
+  expect(stageDpr(false)).toBeLessThanOrEqual(2)
 })

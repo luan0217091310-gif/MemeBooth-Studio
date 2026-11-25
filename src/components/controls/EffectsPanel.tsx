@@ -1,7 +1,9 @@
+import { Shuffle, Trash2 } from 'lucide-react'
 import { props } from '@/config/props'
 import { getStageEngine } from '@/components/stage/CameraStage'
 import { useFx } from '@/store/fx'
 import { useAlbum } from '@/store/album'
+import { useStage } from '@/store/stage'
 import { ShareSettings } from '@/components/common/ShareModal'
 import { useEffect } from 'react'
 import { vi } from '@/i18n/vi'
@@ -9,13 +11,37 @@ import { vi } from '@/i18n/vi'
 const propUrl = (svg: string) =>
   'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
 
-/** AR props picker. */
+/** AR props picker with quick randomizer & clear. */
 export function PropsPanel() {
   const active = useFx((s) => s.activeProps)
   const toggle = useFx((s) => s.toggleProp)
+  const setFx = useFx((s) => s.set)
+  const randomize = () => {
+    const headProps = props.filter((p) => p.anchor === 'forehead')
+    const faceProps = props.filter((p) => p.anchor !== 'forehead')
+    const a = headProps[Math.floor(Math.random() * headProps.length)]!
+    const b = faceProps[Math.floor(Math.random() * faceProps.length)]!
+    setFx({ activeProps: [a.id, b.id] })
+  }
   return (
     <div className="panel-body">
       <p className="panel-note">{vi.fx.propsNote}</p>
+      <div className="panel-actions">
+        <button type="button" className="ghost small-btn" onClick={randomize}>
+          <Shuffle size={14} />
+          {vi.fx.randomProps}
+        </button>
+        {active.length > 0 && (
+          <button
+            type="button"
+            className="ghost small-btn"
+            onClick={() => setFx({ activeProps: [] })}
+          >
+            <Trash2 size={14} />
+            {vi.fx.clearProps}
+          </button>
+        )}
+      </div>
       <div className="prop-grid">
         {props.map((p) => (
           <button
@@ -36,6 +62,8 @@ export function PropsPanel() {
 /** Sound, microphone and accessibility settings. */
 export function SettingsPanel() {
   const fx = useFx()
+  const mirror = useStage((s) => s.mirror)
+  const setStage = useStage((s) => s.set)
   const engine = () => getStageEngine()
   const usage = useAlbum((s) => s.usage)
   useEffect(() => {
@@ -46,6 +74,43 @@ export function SettingsPanel() {
   }, [])
   return (
     <div className="panel-body settings">
+      <label className="switch">
+        <input
+          type="checkbox"
+          checked={fx.liteMode}
+          onChange={(e) => fx.set({ liteMode: e.target.checked })}
+        />
+        {vi.fx.liteMode}
+      </label>
+      <p className="panel-note">{vi.fx.liteModeNote}</p>
+      <label className="switch">
+        <input
+          type="checkbox"
+          checked={mirror}
+          onChange={(e) => {
+            setStage({ mirror: e.target.checked })
+            engine()?.setMirror(e.target.checked)
+          }}
+        />
+        {vi.fx.mirror}
+      </label>
+      <label className="switch">
+        <input
+          type="checkbox"
+          checked={fx.handShutter}
+          onChange={(e) => fx.set({ handShutter: e.target.checked })}
+        />
+        {vi.fx.handShutter}
+      </label>
+      <p className="panel-note">{vi.fx.handShutterNote}</p>
+      <label className="switch">
+        <input
+          type="checkbox"
+          checked={fx.showSkeleton}
+          onChange={(e) => fx.set({ showSkeleton: e.target.checked })}
+        />
+        {vi.fx.showSkeleton}
+      </label>
       <label className="switch">
         <input
           type="checkbox"

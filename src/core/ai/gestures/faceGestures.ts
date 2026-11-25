@@ -29,14 +29,14 @@ export function heartScore(
   const index = dist(a[8]!, b[8]!, aspect) / size
   const indexY = (a[8]!.y + b[8]!.y) / 2
   const thumbY = (a[4]!.y + b[4]!.y) / 2
-  const above = indexY < thumbY - 0.2 * size ? 1 : 0
+  const above = indexY < thumbY - 0.12 * size ? 1 : 0
   const midIndex = (a[8]!.x + b[8]!.x) / 2
   const midThumb = (a[4]!.x + b[4]!.x) / 2
   const sym = Math.abs(midIndex - midThumb) / size
   const t = faceConfig.heartTouch
   const close = (d: number) =>
-    Math.min(1, Math.max(0, (t * 1.6 - d) / (t * 0.6)))
-  return Math.min(close(thumbs), close(index), above, sym < 0.6 ? 1 : 0)
+    Math.min(1, Math.max(0, (t * 1.45 - d) / (t * 0.55)))
+  return Math.min(close(thumbs), close(index), above, sym < 0.75 ? 1 : 0)
 }
 
 /**

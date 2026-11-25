@@ -13,6 +13,7 @@ export function classifyCameraError(e: unknown): CameraError {
 export async function openCamera(
   video: HTMLVideoElement,
   onEnded: () => void,
+  liteMode = false,
 ): Promise<MediaStream> {
   if (!window.isSecureContext)
     throw Object.assign(new Error(), { name: 'Insecure' })
@@ -22,9 +23,9 @@ export async function openCamera(
     audio: false,
     video: {
       facingMode: 'user',
-      width: { ideal: 1280 },
-      height: { ideal: 720 },
-      frameRate: { ideal: 30 },
+      width: { ideal: liteMode ? 960 : 1280 },
+      height: { ideal: liteMode ? 540 : 720 },
+      frameRate: { ideal: liteMode ? 24 : 30 },
     },
   })
   for (const track of stream.getVideoTracks()) track.onended = onEnded

@@ -19,7 +19,9 @@ const files = (await readdir(base, { recursive: true, withFileTypes: true }))
       .split(path.sep)
       .join('/'),
   )
-  .filter((file) => file !== 'sw.js')
+  .filter(
+    (file) => file !== 'sw.js' && file !== '_headers' && file !== '_redirects',
+  )
   .sort()
 const source = await readFile('scripts/sw-template.js', 'utf8')
 const hash = createHash('sha256').update(source)

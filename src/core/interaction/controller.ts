@@ -246,7 +246,6 @@ export class InteractionController {
     hand: HandState,
     key: string,
     now: number,
-    allowDraw: boolean,
   ): void {
     let slot = this.hands.get(key)
     if (!slot) {
@@ -257,8 +256,7 @@ export class InteractionController {
     const lm = hand.landmarks
     const tip = lm[8]!
     const pinchPt = { x: (lm[4]!.x + tip.x) / 2, y: (lm[4]!.y + tip.y) / 2 }
-    const erasePt = { x: (tip.x + lm[12]!.x) / 2, y: (tip.y + lm[12]!.y) / 2 }
-    // Extra light EMA on the pen tip on top of One Euro.
+    // Extra light EMA on the fingertip on top of One Euro.
     const a = drawConfig.penEmaAlpha
     slot.pen = slot.pen
       ? {
@@ -270,54 +268,39 @@ export class InteractionController {
     const items = useScene.getState().items
     const hovered =
       gesture === 'PINCH' ? hitItem(items, pinchPt, this.aspect) : null
-    const tool = useScene.getState().tool
+    // Automatic air-drawing with hands is disabled so gestures never leave stray strokes.
+    // Hands can still PINCH to grab/scale/rotate stickers & text and POINT to dwell-click UI.
     const fsm = stepDraw(
       slot.fsm,
       {
-        gesture:
-          tool === 'eraser' && gesture === 'POINT' ? 'TWO_FINGER' : gesture,
+        gesture,
         present: true,
         grabHit: !!hovered,
-        allowDraw,
+        allowDraw: false,
       },
       now,
     )
     slot.fsm = fsm
     this.handleEvents(slot, key, fsm, pinchPt, now)
-    if (fsm.state === 'drawing' && fsm.candidate === 'POINT' && slot.stroke)
-      this.extend(slot.stroke, slot.pen, now)
-    if (fsm.state === 'erasing') {
-      const p = tool === 'eraser' ? slot.pen : erasePt
-      this.erasing.set(key, p)
-      this.eraseAt(p)
-    }
     const h = this.handles.get(key)
     if (h) h.pos = pinchPt
     if (hovered) this.hud.highlight.add(hovered.id)
     const color = useScene.getState().color
     const kind: CursorKind =
-      fsm.state === 'drawing'
-        ? 'pen'
-        : fsm.state === 'grabbing'
-          ? 'grabbing'
-          : fsm.state === 'erasing'
-            ? 'erase'
-            : fsm.state === 'paused' || fsm.state === 'clearPending'
-              ? 'pause'
-              : gesture === 'PINCH'
-                ? 'grab'
-                : 'point'
-    this.hud.cursors.push({
-      pos:
-        kind === 'grab' || kind === 'grabbing'
-          ? pinchPt
-          : kind === 'erase' && tool !== 'eraser'
-            ? erasePt
-            : slot.pen,
-      kind,
-      color,
-      progress: fsm.clearProgress,
-    })
+      fsm.state === 'grabbing'
+        ? 'grabbing'
+        : gesture === 'PINCH'
+          ? 'grab'
+          : 'point'
+    // Only show a subtle hand cursor when pinching/grabbing or pointing cleanly.
+    if (kind === 'grab' || kind === 'grabbing' || gesture === 'POINT') {
+      this.hud.cursors.push({
+        pos: kind === 'grab' || kind === 'grabbing' ? pinchPt : slot.pen,
+        kind,
+        color,
+        progress: 0,
+      })
+    }
   }
 
   private handleEvents(
@@ -433,19 +416,19 @@ export class InteractionController {
     this.hud.cursors.length = 0
     this.hud.highlight.clear()
     this.erasing.clear()
-    const allowDraw = useScene.getState().mode === 'draw'
+    const allowMouseDraw = useScene.getState().mode === 'draw'
     for (const slot of this.hands.values()) slot.seen = false
     const counts: Record<string, number> = {}
     for (const hand of snapshot.hands) {
       const n = (counts[hand.handedness] = (counts[hand.handedness] ?? 0) + 1)
-      this.updateHand(hand, 'hand-' + hand.handedness + n, now, allowDraw)
+      this.updateHand(hand, 'hand-' + hand.handedness + n, now)
     }
-    // Hands that disappeared: close their strokes/grabs.
+    // Hands that disappeared: close their grabs.
     for (const [key, slot] of this.hands) {
       if (slot.seen) continue
       const fsm = stepDraw(
         slot.fsm,
-        { gesture: 'NONE', present: false, grabHit: false, allowDraw },
+        { gesture: 'NONE', present: false, grabHit: false, allowDraw: false },
         now,
       )
       this.handleEvents(slot, key, fsm, slot.pen ?? { x: 0, y: 0 }, now)
@@ -459,20 +442,11 @@ export class InteractionController {
       for (const h of this.handles.values()) hot ||= this.inTrash(h.pos)
     this.hud.trash.visible = anyGrab
     this.hud.trash.hot = hot
-    if (pointer) {
-      const tool = useScene.getState().tool
-      const dragging = [...this.pointers.values()].some(
-        (p) => p.kind === 'grab',
-      )
+    // Show eraser radius preview ring only when actively using manual eraser with mouse.
+    if (pointer && allowMouseDraw && useScene.getState().tool === 'eraser') {
       this.hud.cursors.push({
         pos: pointer,
-        kind: dragging
-          ? 'grabbing'
-          : tool === 'eraser' && allowDraw
-            ? 'erase'
-            : allowDraw
-              ? 'pen'
-              : 'point',
+        kind: 'erase',
         color: useScene.getState().color,
         progress: 0,
       })

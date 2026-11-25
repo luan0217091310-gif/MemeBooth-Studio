@@ -39,6 +39,10 @@ export type CapturePhase =
 interface CaptureState {
   phase: CapturePhase
   layout: LayoutId
+  /** Countdown seconds before each photo (3, 1, or 0 for instant). */
+  countdownSec: 3 | 1 | 0
+  /** Optional custom title printed on the photobooth strip / Polaroid frame. */
+  frameLabel: string
   /** Big countdown digit on the HUD (3, 2, 1) or null. */
   count: number | null
   shot: number
@@ -53,6 +57,8 @@ interface CaptureState {
 export const useCapture = create<CaptureState>((set) => ({
   phase: 'idle',
   layout: 'strip',
+  countdownSec: 3,
+  frameLabel: '',
   count: null,
   shot: 0,
   total: 0,

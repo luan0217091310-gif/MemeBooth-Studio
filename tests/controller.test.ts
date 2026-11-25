@@ -2,6 +2,7 @@ import { beforeEach, expect, it } from 'vitest'
 import { InteractionController } from '@/core/interaction/controller'
 import { createViewport } from '@/core/canvas/viewport'
 import { useScene } from '@/store/scene'
+import { handPose } from './fixtures/handPose'
 
 const view = createViewport(1280, 720, 1280, 720)
 const empty = { ts: 0, hands: [], faces: [], derived: {} }
@@ -58,7 +59,8 @@ it('dropping an item on the trash corner deletes it (undoable)', () => {
   expect(useScene.getState().items).toHaveLength(1)
 })
 
-it('mouse draws a stroke that survives a mode switch', () => {
+it('mouse draws a stroke in manual draw mode and survives a mode switch', () => {
+  useScene.getState().setMode('draw')
   const c = new InteractionController()
   c.update(empty, view, 0, null)
   c.pointerDown(5, { x: 0.1, y: 0.1 }, 0)
@@ -67,4 +69,25 @@ it('mouse draws a stroke that survives a mode switch', () => {
   useScene.getState().setMode('meme')
   expect(useScene.getState().strokes).toHaveLength(1)
   expect(useScene.getState().strokes[0]!.points).toHaveLength(2)
+})
+
+it('pointing a hand never auto-draws stray strokes on the stage', () => {
+  useScene.getState().setMode('draw')
+  const c = new InteractionController()
+  const lm = handPose([true, false, false, false])
+  const snap = {
+    ts: 0,
+    hands: [
+      {
+        landmarks: lm,
+        handedness: 'Right' as const,
+        gestures: { POINT: 0.95 },
+      },
+    ],
+    faces: [],
+    derived: {},
+  }
+  for (let t = 0; t <= 400; t += 16) c.update(snap, view, t, null)
+  expect(c.activeStrokes).toHaveLength(0)
+  expect(useScene.getState().strokes).toHaveLength(0)
 })

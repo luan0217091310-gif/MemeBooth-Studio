@@ -12,7 +12,10 @@ import {
   RecordingBadge,
 } from '@/components/stage/CaptureOverlays'
 import { CoachMarks, StageHints } from '@/components/stage/CoachMarks'
-import { GesturePills } from '@/components/stage/GesturePills'
+import {
+  GesturePills,
+  GestureRadarBadge,
+} from '@/components/stage/GesturePills'
 import { getStageEngine } from '@/core/engineRef'
 import { loadCustomMemes } from '@/core/storage/customMemes'
 import { unlockAudio } from '@/core/audio/engine'
@@ -83,6 +86,7 @@ export default function LiveStage() {
       <QuickBar />
       <SideDrawer />
       <StageHints />
+      <GestureRadarBadge />
       <GesturePills />
       <FloatingDock />
       <CoachMarks />

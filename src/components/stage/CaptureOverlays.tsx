@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download, Film, RotateCcw, X } from 'lucide-react'
+import { Copy, Download, Film, RotateCcw, X } from 'lucide-react'
 import { getStageEngine } from '@/components/stage/CameraStage'
 import {
   canvasToBlob,
@@ -115,6 +115,23 @@ export function CaptureReview() {
         setGifBusy(false)
       }
     }
+    const copyImage = async () => {
+      try {
+        if (
+          typeof ClipboardItem === 'undefined' ||
+          !navigator.clipboard?.write
+        ) {
+          useUi.getState().showToast({ text: vi.capture.copyFailed, ttl: 4000 })
+          return
+        }
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': photo.png }),
+        ])
+        useUi.getState().showToast({ text: vi.capture.copied, ttl: 3000 })
+      } catch {
+        useUi.getState().showToast({ text: vi.capture.copyFailed, ttl: 4000 })
+      }
+    }
     return (
       <div
         className="review"
@@ -160,6 +177,10 @@ export function CaptureReview() {
             </button>
             <button className="ghost" onClick={() => void jpeg().catch(fail)}>
               {vi.capture.jpeg}
+            </button>
+            <button className="ghost" onClick={() => void copyImage()}>
+              <Copy size={17} />
+              {vi.capture.copy}
             </button>
             {photo.shots.length > 1 && (
               <button

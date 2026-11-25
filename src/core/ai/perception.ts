@@ -7,7 +7,11 @@ import type {
   Vec2,
 } from '@/types'
 import { Ema } from './filters/ema'
-import { classifyGeometry, type GeometryState } from './gestures/handGestures'
+import {
+  classifyGeometry,
+  classifyMemeGestures,
+  type GeometryState,
+} from './gestures/handGestures'
 import { PointSetFilter, type OneEuroParams } from './filters/oneEuro'
 import type { RawResult } from './protocol'
 import { normalizeHandedness, toDisplay } from './toDisplay'
@@ -167,18 +171,28 @@ export class PerceptionTracker {
       track.push(result.ts, points)
       const pointing = raw.gestures.find((g) => g.name === 'Pointing_Up')
       track.pointingScore = track.pointingUp.next(pointing?.score ?? 0)
-      const seen = new Set<HandGestureId>()
+      // Fuse MediaPipe classifier scores with landmark geometry for crisp, reliable recognition.
+      const geo = classifyMemeGestures(points, this.aspect)
+      const combined = new Map<HandGestureId, number>()
       for (const g of raw.gestures) {
         const id = BUILTIN[g.name]
-        if (!id) continue
-        seen.add(id)
+        if (id) combined.set(id, Math.max(combined.get(id) ?? 0, g.score))
+      }
+      for (const [id, score] of Object.entries(geo) as [
+        HandGestureId,
+        number,
+      ][]) {
+        if (score > 0.05)
+          combined.set(id, Math.max(combined.get(id) ?? 0, score))
+      }
+      for (const [id, score] of combined) {
         let ema = track.scores.get(id)
         if (!ema)
           track.scores.set(id, (ema = new Ema(smoothingConfig.scoreAlpha)))
-        track.gestures[id] = ema.next(g.score)
+        track.gestures[id] = ema.next(score)
       }
       for (const [id, ema] of track.scores)
-        if (!seen.has(id)) track.gestures[id] = ema.next(0)
+        if (!combined.has(id)) track.gestures[id] = ema.next(0)
     }
   }
 

@@ -42,6 +42,7 @@ export class VisionClient {
   private disposed = false
   private lastSent = -Infinity
   private paused = false
+  private liteMode = false
   private resultTimes: number[] = []
   private msAvg = 0
   private runBoth = false
@@ -67,6 +68,7 @@ export class VisionClient {
 
   private get targetFps(): number {
     if (this.stats.runtime === 'main') return this.config.fallbackFps
+    if (this.liteMode) return 14
     return isMobile() ? this.config.mobileTargetFps : this.config.targetFps
   }
 
@@ -161,11 +163,13 @@ export class VisionClient {
     this.msAvg = this.msAvg
       ? this.msAvg * 0.9 + result.inferenceMs * 0.1
       : result.inferenceMs
-    // Adaptive quality: run both models per tick when there is headroom.
+    // Adaptive quality: run both models per tick when there is headroom (disabled in lite mode).
     const budget = this.config.bothModelsBudgetMs
-    const wantBoth = this.runBoth
-      ? this.msAvg < budget * 1.6
-      : this.msAvg < budget * 0.6
+    const wantBoth = this.liteMode
+      ? false
+      : this.runBoth
+        ? this.msAvg < budget * 1.6
+        : this.msAvg < budget * 0.6
     if (wantBoth !== this.runBoth) {
       this.runBoth = wantBoth
       if (this.mainCore) this.mainCore.runBoth = wantBoth
@@ -179,6 +183,16 @@ export class VisionClient {
 
   setPaused(paused: boolean): void {
     this.paused = paused
+  }
+
+  setLiteMode(lite: boolean): void {
+    this.liteMode = lite
+    if (lite && this.runBoth) {
+      this.runBoth = false
+      if (this.mainCore) this.mainCore.runBoth = false
+      else this.post({ type: 'setOptions', runBoth: false })
+      this.stats.runBoth = false
+    }
   }
 
   setNumFaces(numFaces: number): void {
@@ -203,7 +217,9 @@ export class VisionClient {
       }
       return
     }
-    const long = this.config.inferenceLongEdge
+    const long = this.liteMode
+      ? Math.min(this.config.inferenceLongEdge, 384)
+      : this.config.inferenceLongEdge
     const ratio = Math.min(
       1,
       long / Math.max(video.videoWidth, video.videoHeight),

@@ -4,6 +4,7 @@ import { App } from '@/app/App'
 import { vibes } from '@/config/vibes'
 import { useScene } from '@/store/scene'
 import { useSession } from '@/store/session'
+import { useUi } from '@/store/ui'
 import { useVibe } from '@/store/vibe'
 import { vi } from '@/i18n/vi'
 
@@ -11,10 +12,18 @@ afterEach(() => {
   cleanup()
   useSession.setState(useSession.getInitialState())
   useScene.setState(useScene.getInitialState())
+  useUi.setState(useUi.getInitialState())
 })
 
-it('ships four vibes, each with tokens, filter, brush, particles and sounds', () => {
-  expect(vibes.map((v) => v.id)).toEqual(['kawaii', 'y2k', 'chaotic', 'neon'])
+it('ships six vibes, each with tokens, filter, brush, particles and sounds', () => {
+  expect(vibes.map((v) => v.id)).toEqual([
+    'kawaii',
+    'y2k',
+    'chaotic',
+    'neon',
+    'film',
+    'dream',
+  ])
   for (const v of vibes) {
     expect(v.ui['--mb-accent']).toBeTruthy()
     expect(v.brush.palette.length).toBeGreaterThan(3)
@@ -58,7 +67,12 @@ it('live stage shows the dock, drawer rail and quick bar', async () => {
     ),
   ).toBeTruthy()
   expect(screen.getByRole('navigation', { name: vi.drawer.label })).toBeTruthy()
-  fireEvent.click(screen.getByRole('button', { name: vi.drawer.memes }))
-  expect(screen.getByRole('region', { name: vi.drawer.memes })).toBeTruthy()
+  const memesBtn = screen.getByRole('button', { name: vi.drawer.memes })
+  await act(async () => {
+    fireEvent.click(memesBtn)
+  })
+  expect(
+    await screen.findByRole('region', { name: vi.drawer.memes }),
+  ).toBeTruthy()
   expect(screen.getAllByText('Đỉnh nóc kịch trần').length).toBeGreaterThan(0)
 }, 30_000)

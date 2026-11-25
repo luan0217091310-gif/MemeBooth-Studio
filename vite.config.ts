@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { vi } from './src/i18n/vi.ts'
 
 export default defineConfig({
+  base: './',
   plugins: [
     react(),
     tailwindcss(),
@@ -19,6 +20,10 @@ export default defineConfig({
   ],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src/', import.meta.url)) },
+  },
+  build: {
+    target: 'es2022',
+    cssMinify: true,
   },
   preview: { host: '127.0.0.1', port: 48217, strictPort: true },
   worker: { format: 'es' },

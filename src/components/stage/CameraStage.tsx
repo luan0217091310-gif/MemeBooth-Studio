@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { StageEngine } from '@/core/canvas/stageEngine'
 import { getStageEngine, setStageEngine } from '@/core/engineRef'
+import { useFx } from '@/store/fx'
+import { useScene } from '@/store/scene'
 import { useStage } from '@/store/stage'
 import { PermissionModal } from '@/components/common/PermissionModal'
 import { LoadingProgress } from '@/components/common/LoadingProgress'
@@ -18,6 +20,8 @@ export function CameraStage() {
   const hud = useRef<HTMLCanvasElement>(null)
   const engine = useRef<StageEngine | null>(null)
   const status = useStage((s) => s.camera)
+  const mode = useScene((s) => s.mode)
+  const ringLight = useFx((s) => s.ringLight)
 
   useEffect(() => {
     const engineInstance = new StageEngine({
@@ -43,7 +47,13 @@ export function CameraStage() {
   }, [])
 
   return (
-    <div className="camera-stage" ref={root} data-camera={status}>
+    <div
+      className="camera-stage"
+      ref={root}
+      data-camera={status}
+      data-mode={mode}
+      data-ring={ringLight}
+    >
       <video
         ref={video}
         className="camera-video"

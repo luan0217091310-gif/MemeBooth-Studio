@@ -28,8 +28,20 @@ export interface LiveInfo {
   particles: number
 }
 
+export interface GestureRadar {
+  /** Comma-joined sorted active gesture/expression IDs (cheap equality check). */
+  activeKey: string
+  /** Highest-confidence detected gesture/expression ID, or null. */
+  topId: string | null
+  /** Rule currently charging up to fire (name + 0..1 progress). */
+  pending: { name: string; progress: number } | null
+  hands: number
+  faces: number
+}
+
 interface StageState {
   live: LiveInfo
+  radar: GestureRadar
   camera: CameraStatus
   cameraError?: CameraError
   vision: VisionStatus
@@ -69,6 +81,13 @@ export const useStage = create<StageState>((set) => ({
     scores: {},
     gestures: [],
     particles: 0,
+  },
+  radar: {
+    activeKey: '',
+    topId: null,
+    pending: null,
+    hands: 0,
+    faces: 0,
   },
   set: (partial) => set(partial),
 }))

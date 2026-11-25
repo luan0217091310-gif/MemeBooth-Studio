@@ -42,6 +42,11 @@ export interface AppSettings {
   onboarded?: boolean
   reduceFlash?: boolean
   reducedMotion?: boolean
+  liteMode?: boolean
+  showSkeleton?: boolean
+  beauty?: number
+  ringLight?: 'off' | 'white' | 'pink' | 'warm'
+  handShutter?: boolean
 }
 
 export class StorageError extends Error {

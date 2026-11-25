@@ -45,7 +45,7 @@ export const useScene = create<SceneState>((set, get) => ({
   past: [],
   future: [],
   version: 0,
-  mode: 'draw',
+  mode: 'meme',
   tool: 'pen',
   brushId: 'pastel',
   color: '#ff5fa2',

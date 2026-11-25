@@ -2,17 +2,26 @@ import { lazy, Suspense, useEffect, type CSSProperties } from 'react'
 import {
   ArrowLeft,
   CircleHelp,
+  FlipHorizontal2,
+  Hand,
   LockKeyhole,
   Power,
   ShieldCheck,
+  Sparkles,
+  Sun,
+  Volume2,
+  VolumeX,
+  Zap,
 } from 'lucide-react'
 import { DebugPanel } from '@/components/common/DebugPanel'
 import { VibeChip } from '@/components/controls/VibePicker'
 import { artwork } from '@/config/assets'
+import { vibes } from '@/config/vibes'
 import { setMuted, unlockAudio } from '@/core/audio/engine'
+import { getStageEngine } from '@/core/engineRef'
 import { startSettingsSync } from '@/core/storage/settingsSync'
 import { useAlbum } from '@/store/album'
-import { useFx } from '@/store/fx'
+import { useFx, type RingLightMode } from '@/store/fx'
 import { useScene } from '@/store/scene'
 import { useSession } from '@/store/session'
 import { useStage } from '@/store/stage'
@@ -30,7 +39,7 @@ function ModeChip() {
   const setMode = useScene((s) => s.setMode)
   return (
     <div className="mode-chip" role="radiogroup" aria-label={vi.draw.mode}>
-      {(['draw', 'meme'] as const).map((m) => (
+      {(['meme', 'draw'] as const).map((m) => (
         <button
           key={m}
           role="radio"
@@ -46,6 +55,73 @@ function ModeChip() {
   )
 }
 
+const RING_ORDER: readonly RingLightMode[] = ['off', 'white', 'pink', 'warm']
+
+function QuickHeaderControls() {
+  const mirror = useStage((s) => s.mirror)
+  const setStage = useStage((s) => s.set)
+  const muted = useFx((s) => s.muted)
+  const ringLight = useFx((s) => s.ringLight)
+  const handShutter = useFx((s) => s.handShutter)
+  const setFx = useFx((s) => s.set)
+  const nextRing = () => {
+    const i = RING_ORDER.indexOf(ringLight)
+    setFx({ ringLight: RING_ORDER[(i + 1) % RING_ORDER.length]! })
+  }
+  return (
+    <>
+      <button
+        className={'chip icon-chip ' + (handShutter ? 'lit-on' : '')}
+        aria-label={vi.fx.handShutter}
+        aria-pressed={handShutter}
+        title={vi.fx.handShutter}
+        onClick={() => setFx({ handShutter: !handShutter })}
+      >
+        <Hand size={16} />
+      </button>
+      <button
+        className={'chip icon-chip ' + (ringLight !== 'off' ? 'lit-on' : '')}
+        aria-label={
+          vi.fx.ringLight + ': ' + (vi.fx.ringModes[ringLight] ?? ringLight)
+        }
+        aria-pressed={ringLight !== 'off'}
+        title={
+          vi.fx.ringLight + ': ' + (vi.fx.ringModes[ringLight] ?? ringLight)
+        }
+        onClick={nextRing}
+      >
+        <Sun size={16} />
+      </button>
+      <button
+        className={'chip icon-chip ' + (mirror ? 'on' : '')}
+        aria-label={vi.fx.mirror}
+        aria-pressed={mirror}
+        title={vi.fx.mirror}
+        onClick={() => {
+          const next = !mirror
+          setStage({ mirror: next })
+          getStageEngine()?.setMirror(next)
+        }}
+      >
+        <FlipHorizontal2 size={16} />
+      </button>
+      <button
+        className={'chip icon-chip ' + (muted ? '' : 'on')}
+        aria-label={muted ? vi.fx.soundOn : vi.fx.soundOff}
+        aria-pressed={!muted}
+        title={muted ? vi.fx.soundOn : vi.fx.soundOff}
+        onClick={() => {
+          const next = !muted
+          setMuted(next)
+          setFx({ muted: next })
+        }}
+      >
+        {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+      </button>
+    </>
+  )
+}
+
 function FpsBadge() {
   const fps = useStage((s) => s.perf.fps)
   const inf = useStage((s) => s.perf.inferenceFps)
@@ -56,9 +132,26 @@ function FpsBadge() {
   )
 }
 
+function LiteChip() {
+  const liteMode = useFx((s) => s.liteMode)
+  const setFx = useFx((s) => s.set)
+  return (
+    <button
+      className={'chip lite-chip ' + (liteMode ? 'on' : '')}
+      aria-pressed={liteMode}
+      title={vi.fx.liteModeNote}
+      onClick={() => setFx({ liteMode: !liteMode })}
+    >
+      <Zap size={15} />
+      <span>{vi.fx.liteChip}</span>
+    </button>
+  )
+}
+
 export function App() {
   const { started, setStarted, debug, setDebug, offline } = useSession()
   const preset = useVibe((s) => s.preset)
+  const liteMode = useFx((s) => s.liteMode)
   useEffect(() => {
     void startSettingsSync((s) => {
       if (s.muted) {
@@ -115,6 +208,7 @@ export function App() {
     <main
       className={'studio ' + (started ? 'is-live' : 'is-home')}
       data-vibe={preset.id}
+      data-lite={liteMode ? 'true' : undefined}
       style={preset.ui as CSSProperties}
     >
       <header className="mast">
@@ -128,6 +222,8 @@ export function App() {
           <div className="mast-center">
             <ModeChip />
             <VibeChip />
+            <LiteChip />
+            <QuickHeaderControls />
             {debug && <FpsBadge />}
           </div>
         )}
@@ -152,9 +248,13 @@ export function App() {
       {!started ? (
         <section className="stage home" aria-label={vi.stage}>
           <div className="frame">
+            <div className="ambient-orbs" aria-hidden="true" />
             <div className="welcome">
               <div className="copy">
-                <p className="intro">{vi.intro}</p>
+                <p className="intro">
+                  <Sparkles size={16} aria-hidden />
+                  {vi.intro}
+                </p>
                 <h1>
                   {vi.title[0]}
                   <br />
@@ -163,21 +263,65 @@ export function App() {
                     <span aria-hidden="true">✦</span>
                   </em>
                 </h1>
-                <button
-                  className="primary"
-                  onClick={start}
-                  onPointerEnter={preloadLiveStage}
-                  onFocus={preloadLiveStage}
-                >
-                  <Power size={21} />
-                  {vi.start}
-                </button>
+                <ul className="hero-badges" aria-label={vi.intro}>
+                  {vi.heroBadges.map((label) => (
+                    <li key={label}>{label}</li>
+                  ))}
+                </ul>
+                <div className="hero-cta-row">
+                  <button
+                    className="primary"
+                    onClick={start}
+                    onPointerEnter={preloadLiveStage}
+                    onFocus={preloadLiveStage}
+                  >
+                    <Power size={21} />
+                    {vi.start}
+                  </button>
+                  <div className="home-vibes" aria-label={vi.tryVibe}>
+                    <span>{vi.tryVibe}</span>
+                    <div className="home-vibe-dots">
+                      {vibes.map((v) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          className={
+                            'home-vibe-dot ' +
+                            (preset.id === v.id ? 'on' : '')
+                          }
+                          title={v.name}
+                          aria-label={v.name}
+                          aria-pressed={preset.id === v.id}
+                          style={{
+                            background: `linear-gradient(135deg, ${v.ui['--mb-accent']}, ${v.ui['--mb-accent-2']})`,
+                          }}
+                          onClick={() => useVibe.getState().setVibe(v.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
                 <p className="privacy-line">
                   <LockKeyhole size={15} />
                   {vi.privacy}
                 </p>
               </div>
-              <img className="illustration" src={artwork.booth} alt="" />
+              <div className="hero-visual">
+                <img className="illustration" src={artwork.booth} alt="" />
+              </div>
+            </div>
+            <div className="bento-grid">
+              {vi.bento.map((card) => (
+                <article key={card.title} className="bento-card">
+                  <span className="bento-icon" aria-hidden>
+                    {card.icon}
+                  </span>
+                  <div>
+                    <h2>{card.title}</h2>
+                    <p>{card.desc}</p>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </section>

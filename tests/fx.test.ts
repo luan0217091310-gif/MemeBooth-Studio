@@ -37,17 +37,17 @@ it('wink differs from a full blink', () => {
   expect(s.derived.WINK).toBeLessThan(0.55)
 })
 
-it('mouth open uses hysteresis (enter 0.65, exit 0.5)', () => {
+it('mouth open uses hysteresis (enter 0.48, exit 0.34)', () => {
   const t = new DerivedTracker()
   const at = (v: number) => {
     const s = face({ jawOpen: v })
     for (let i = 0; i < 30; i++) t.update(s, 1)
     return s.derived.MOUTH_OPEN!
   }
-  expect(at(0.6)).toBeLessThan(0.55)
-  expect(at(0.8)).toBeGreaterThanOrEqual(0.6)
-  expect(at(0.55)).toBeGreaterThanOrEqual(0.6)
-  expect(at(0.4)).toBeLessThan(0.55)
+  expect(at(0.42)).toBeLessThan(0.55)
+  expect(at(0.65)).toBeGreaterThanOrEqual(0.6)
+  expect(at(0.38)).toBeGreaterThanOrEqual(0.6)
+  expect(at(0.25)).toBeLessThan(0.55)
 })
 
 it('detects a two-hand heart from geometry', () => {

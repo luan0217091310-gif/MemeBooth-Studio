@@ -82,10 +82,13 @@ export class CaptureController {
         useCapture.getState().set({ shot: i + 1 })
         let live: Recorder | null = null
         let liveFrom = 0
-        for (const n of [3, 2, 1]) {
+        const countdownSec = useCapture.getState().countdownSec
+        const steps =
+          countdownSec === 3 ? [3, 2, 1] : countdownSec === 1 ? [1] : []
+        for (const n of steps) {
           useCapture.getState().set({ count: n })
           playSound('beep', { pitch: n === 1 ? 1.5 : 1 })
-          // Live Photo: start ~2 s before the shutter.
+          // Live Photo: start ~2 s before the shutter (when 3s countdown is active).
           if (n === 2 && mime) {
             const stream = this.engine.startStream(LIVE_LONG_EDGE)
             if (stream) {
@@ -114,6 +117,8 @@ export class CaptureController {
         layout,
         shots,
         useVibe.getState().preset.photoFrame,
+        new Date(),
+        useCapture.getState().frameLabel,
       )
       const png = await canvasToBlob(composed, 'image/png')
       useCapture.getState().set({

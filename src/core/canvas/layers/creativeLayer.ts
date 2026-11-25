@@ -36,6 +36,8 @@ export class CreativeLayer {
   private cache: Surface | null = null
   private cacheCtx: Ctx2D | null = null
   private cacheKey = ''
+  private lastDrawKey = ''
+  private hadActive = false
   /** Strokes still being drawn (not yet committed). */
   active: readonly Stroke[] = []
   /** Extra item scale (sound-reactive bounce, phase 3). */
@@ -49,6 +51,7 @@ export class CreativeLayer {
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.canvas.width = width
       this.canvas.height = height
+      this.lastDrawKey = ''
     }
   }
 
@@ -88,6 +91,13 @@ export class CreativeLayer {
       ',' +
       view.offsetY
     if (key !== this.cacheKey) this.rebuild(space, key)
+    const pulseKey = items.length ? this.pulse.toFixed(3) : '1'
+    const drawKey = key + ':' + pulseKey
+    const hasActive = this.active.length > 0
+    // Skip full-canvas clear & composite when nothing on Layer 1 changed.
+    if (!hasActive && !this.hadActive && drawKey === this.lastDrawKey) return
+    this.hadActive = hasActive
+    this.lastDrawKey = drawKey
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
     if (this.cache) ctx.drawImage(this.cache, 0, 0)

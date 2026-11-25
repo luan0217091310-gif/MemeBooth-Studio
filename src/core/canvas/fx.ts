@@ -307,21 +307,20 @@ export class FxEngine {
       if (life <= 0) continue
       const size = p.size[i]! * s.unit
       const rot = p.rotation[i]!
-      const c = Math.cos(rot)
-      const sn = Math.sin(rot)
+      const px = p.x[i]! * s.sx + s.ox
+      const py = p.y[i]! * s.sy + s.oy
       ctx.globalAlpha = Math.min(
         1,
         life / 0.35,
         (p.maxLife[i]! - life) / 0.08 + 0.2,
       )
-      ctx.setTransform(
-        c,
-        sn,
-        -sn,
-        c,
-        p.x[i]! * s.sx + s.ox,
-        p.y[i]! * s.sy + s.oy,
-      )
+      if (rot === 0) {
+        ctx.setTransform(1, 0, 0, 1, px, py)
+      } else {
+        const c = Math.cos(rot)
+        const sn = Math.sin(rot)
+        ctx.setTransform(c, sn, -sn, c, px, py)
+      }
       ctx.drawImage(
         atlas,
         this.atlas.cellX(p.sprite[i]!, p.hue[i]!),

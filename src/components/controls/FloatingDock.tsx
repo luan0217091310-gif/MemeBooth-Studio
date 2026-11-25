@@ -1,17 +1,18 @@
-import { Camera, Square, Trophy, Video, X } from 'lucide-react'
+import { Camera, Square, Timer, Trophy, Video, X } from 'lucide-react'
 import { getStageEngine } from '@/components/stage/CameraStage'
 import { layoutOrder, layouts } from '@/core/capture/layouts'
 import { useCapture } from '@/store/capture'
 import { useChallenge } from '@/store/challenge'
 import { vi } from '@/i18n/vi'
 
+const TIMERS: readonly (3 | 1 | 0)[] = [3, 1, 0]
+
 /**
- * Smart Floating Dock: three primary actions. While capturing it turns into
- * context controls (Stop / Cancel). The Challenge button ships in phase 7 and
- * stays visibly disabled until then.
+ * Smart Floating Dock: layout, timer, and primary capture actions.
+ * While capturing it turns into context controls (Stop / Cancel).
  */
 export function FloatingDock() {
-  const { phase, layout, set, shot, total } = useCapture()
+  const { phase, layout, countdownSec, set, shot, total } = useCapture()
   const capture = () => getStageEngine()?.capture
   const chPhase = useChallenge((s) => s.phase)
   // During a challenge round the challenge HUD owns the dock.
@@ -47,20 +48,35 @@ export function FloatingDock() {
         </button>
       </div>
     )
-  const next = () => {
+  const nextLayout = () => {
     const i = layoutOrder.indexOf(layout)
     set({ layout: layoutOrder[(i + 1) % layoutOrder.length]! })
   }
+  const nextTimer = () => {
+    const i = TIMERS.indexOf(countdownSec)
+    set({ countdownSec: TIMERS[(i + 1) % TIMERS.length]! })
+  }
+  const timerText = countdownSec === 0 ? vi.capture.instant : countdownSec + 's'
   return (
     <div className="dock" role="toolbar" aria-label={vi.dock.label}>
       <button
         className="dock-layout"
         data-dwell
-        onClick={next}
+        onClick={nextLayout}
         aria-label={vi.capture.layout + ': ' + layouts[layout].name}
       >
         <small>{vi.capture.layout}</small>
         <b>{layouts[layout].name}</b>
+      </button>
+      <button
+        className="dock-timer"
+        data-dwell
+        onClick={nextTimer}
+        aria-label={vi.capture.timer + ': ' + timerText}
+        title={vi.capture.timer}
+      >
+        <Timer size={16} />
+        <b>{timerText}</b>
       </button>
       <button
         className="dock-btn"

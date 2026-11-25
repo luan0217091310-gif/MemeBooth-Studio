@@ -3,27 +3,37 @@ import { useFx } from '@/store/fx'
 import { useCapture } from '@/store/capture'
 import { useScene } from '@/store/scene'
 import { useUi } from '@/store/ui'
+import { useVibe } from '@/store/vibe'
 import { vi } from '@/i18n/vi'
 
 /**
- * First-run coach marks: try drawing, try a meme, try capturing.
+ * First-run coach marks: try a meme gesture, try Vibe/AR/stickers, try capturing.
  * Each step advances automatically when the user does it; always skippable.
  */
 export function CoachMarks() {
   const step = useUi((s) => s.coach)
   const setCoach = useUi((s) => s.setCoach)
   const strokes = useScene((s) => s.strokes.length + s.items.length)
+  const propsCount = useFx((s) => s.activeProps.length)
+  const vibeId = useVibe((s) => s.vibeId)
   const lastMeme = useFx((s) => s.lastMeme)
   const captured = useCapture((s) => s.phase === 'review')
-  const baseline = useRef({ strokes, lastMeme })
+  const baseline = useRef({ strokes, propsCount, vibeId, lastMeme })
 
   useEffect(() => {
-    if (step === 0 && strokes > baseline.current.strokes) setCoach(1)
-  }, [step, strokes, setCoach])
-  useEffect(() => {
-    if (step === 1 && lastMeme && lastMeme !== baseline.current.lastMeme)
-      setCoach(2)
+    if (step === 0 && lastMeme && lastMeme !== baseline.current.lastMeme)
+      setCoach(1)
   }, [step, lastMeme, setCoach])
+
+  useEffect(() => {
+    if (
+      step === 1 &&
+      (vibeId !== baseline.current.vibeId ||
+        propsCount > baseline.current.propsCount ||
+        strokes > baseline.current.strokes)
+    )
+      setCoach(2)
+  }, [step, vibeId, propsCount, strokes, setCoach])
 
   useEffect(() => {
     if (step === 2 && captured) setCoach(-1)

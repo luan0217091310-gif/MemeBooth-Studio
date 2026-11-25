@@ -16,6 +16,7 @@ export interface CompositorSource {
   props: ArProps
   activeStrokes: readonly Stroke[]
   filter: FilterParams
+  beauty: number
   mirror: boolean
   shake: { x: number; y: number }
 }
@@ -74,6 +75,7 @@ export class Compositor {
     const { w, h } = { w: this.width, h: this.height }
     const view = createViewport(w, h, src.view.srcWidth, src.view.srcHeight)
     this.camera.filter = src.filter
+    this.camera.beauty = src.beauty
     this.camera.mirror = src.mirror
     this.camera.draw(src.video, view, 1, now)
     this.creative.active = src.activeStrokes
