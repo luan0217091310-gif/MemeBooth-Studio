@@ -43,3 +43,36 @@ test('meme-first onboarding, manual mouse draw and vibe work smoothly', async ({
   await expect(page.getByRole('button', { name: 'Hoàn tác' })).toBeEnabled()
   expect(errors).toEqual([])
 })
+
+test('mobile viewport (390x844) has no horizontal overflow and native bottom sheet works', async ({
+  page,
+}) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.evaluate(() => localStorage.setItem('memebooth.onboarded', '1'))
+  await page.reload()
+
+  // Home screen must fit cleanly within 390px without horizontal page scroll.
+  const homeOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth,
+  )
+  expect(homeOverflow).toBe(false)
+
+  await page.getByRole('button', { name: 'Bắt đầu' }).click()
+  await page.getByRole('button', { name: 'Dùng không cần camera' }).click()
+
+  // Bottom dock must stay completely inside the 390px viewport.
+  const dockBox = (await page.locator('.dock').boundingBox())!
+  expect(dockBox.x).toBeGreaterThanOrEqual(0)
+  expect(dockBox.x + dockBox.width).toBeLessThanOrEqual(390.5)
+
+  // Open Kho Meme bottom sheet, verify visible, then dismiss by tapping backdrop.
+  await page.getByRole('button', { name: 'Kho Meme' }).click()
+  const sheet = page.getByRole('region', { name: 'Kho Meme' })
+  await expect(sheet).toBeVisible()
+  await page.locator('.drawer-backdrop').click({ position: { x: 100, y: 60 } })
+  await expect(sheet).toBeHidden()
+  expect(errors).toEqual([])
+})

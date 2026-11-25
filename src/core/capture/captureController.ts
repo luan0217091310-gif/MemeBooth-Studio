@@ -103,6 +103,7 @@ export class CaptureController {
         const still = copyCanvas(this.engine.captureStill())
         this.engine.fx.flash(performance.now())
         playSound('shutter')
+        if (typeof navigator !== 'undefined') navigator.vibrate?.([14, 24, 14])
         shots.push(still)
         if (live) {
           await sleep(500, abort.signal)

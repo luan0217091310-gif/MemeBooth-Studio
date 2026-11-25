@@ -79,11 +79,11 @@ export function FloatingDock() {
         <b>{timerText}</b>
       </button>
       <button
-        className="dock-btn"
+        className="dock-btn shutter-btn"
         data-dwell
         onClick={() => void capture()?.startPhoto()}
       >
-        <Camera size={26} />
+        <Camera size={24} />
         <span>{vi.dock.photo}</span>
         <kbd>Space</kbd>
       </button>
@@ -92,7 +92,7 @@ export function FloatingDock() {
         data-dwell
         onClick={() => capture()?.startVideo()}
       >
-        <Video size={26} />
+        <Video size={22} />
         <span>{vi.dock.video}</span>
         <kbd>R</kbd>
       </button>
@@ -101,7 +101,7 @@ export function FloatingDock() {
         data-dwell
         onClick={() => getStageEngine()?.challengeCtl.open()}
       >
-        <Trophy size={26} />
+        <Trophy size={22} />
         <span>{vi.dock.challenge}</span>
       </button>
     </div>

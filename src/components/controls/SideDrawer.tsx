@@ -99,31 +99,39 @@ export function SideDrawer() {
         ))}
       </nav>
       {current && (
-        <section
-          id="drawer-panel"
-          ref={panelRef}
-          tabIndex={-1}
-          className="drawer-panel"
-          aria-label={current.label}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.stopPropagation()
-              setDrawer(null)
-            }
-          }}
-        >
-          <header>
-            <h2>{current.label}</h2>
-            <button
-              className="round"
-              aria-label={vi.close}
-              onClick={() => setDrawer(null)}
-            >
-              <X size={18} />
-            </button>
-          </header>
-          {panelFor(current.id)}
-        </section>
+        <>
+          <div
+            className="drawer-backdrop"
+            aria-hidden="true"
+            onClick={() => setDrawer(null)}
+          />
+          <section
+            id="drawer-panel"
+            ref={panelRef}
+            tabIndex={-1}
+            className="drawer-panel"
+            aria-label={current.label}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation()
+                setDrawer(null)
+              }
+            }}
+          >
+            <span className="sheet-handle" aria-hidden="true" />
+            <header>
+              <h2>{current.label}</h2>
+              <button
+                className="round"
+                aria-label={vi.close}
+                onClick={() => setDrawer(null)}
+              >
+                <X size={18} />
+              </button>
+            </header>
+            {panelFor(current.id)}
+          </section>
+        </>
       )}
     </>
   )

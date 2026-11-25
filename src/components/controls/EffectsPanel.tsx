@@ -1,4 +1,4 @@
-import { Shuffle, Trash2 } from 'lucide-react'
+import { Shuffle, SwitchCamera, Trash2 } from 'lucide-react'
 import { props } from '@/config/props'
 import { getStageEngine } from '@/components/stage/CameraStage'
 import { useFx } from '@/store/fx'
@@ -63,6 +63,8 @@ export function PropsPanel() {
 export function SettingsPanel() {
   const fx = useFx()
   const mirror = useStage((s) => s.mirror)
+  const facing = useStage((s) => s.facing)
+  const camera = useStage((s) => s.camera)
   const setStage = useStage((s) => s.set)
   const engine = () => getStageEngine()
   const usage = useAlbum((s) => s.usage)
@@ -74,6 +76,17 @@ export function SettingsPanel() {
   }, [])
   return (
     <div className="panel-body settings">
+      {camera === 'live' && (
+        <button
+          type="button"
+          className="ghost small-btn"
+          onClick={() => void engine()?.switchCamera()}
+        >
+          <SwitchCamera size={16} />
+          {vi.fx.switchCamera} (
+          {facing === 'user' ? vi.fx.frontCamera : vi.fx.rearCamera})
+        </button>
+      )}
       <label className="switch">
         <input
           type="checkbox"

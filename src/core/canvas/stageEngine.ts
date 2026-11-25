@@ -3,7 +3,12 @@ import { PerceptionTracker } from '@/core/ai/perception'
 import type { Delegate } from '@/core/ai/protocol'
 import { setMirror } from '@/core/ai/toDisplay'
 import { VisionClient } from '@/core/ai/visionClient'
-import { cameraErrorOf, openCamera, stopStream } from '@/core/camera'
+import {
+  cameraErrorOf,
+  openCamera,
+  stopStream,
+  type CameraFacing,
+} from '@/core/camera'
 import { vi } from '@/i18n/vi'
 import { useSession } from '@/store/session'
 import { useStage } from '@/store/stage'
@@ -168,9 +173,26 @@ export class StageEngine {
     this.pointer = e.pointerType === 'touch' ? null : p
     this.controller.pointerMove(e.pointerId, p, performance.now())
   }
+  private lastTapAt = 0
+  private lastTapPos: Vec2 = { x: 0, y: 0 }
   private onPointerDown = (e: PointerEvent) => {
     if (!this.isStageTarget(e) || e.button > 0) return
     const p = this.toDisplayPoint(e)
+    // Mobile native shortcut: double-tap the camera stage to flip front/rear camera.
+    if (e.pointerType === 'touch' && useScene.getState().mode === 'meme') {
+      const now = performance.now()
+      const dist = Math.hypot(
+        p.x - this.lastTapPos.x,
+        p.y - this.lastTapPos.y,
+      )
+      if (now - this.lastTapAt < 320 && dist < 0.12) {
+        this.lastTapAt = 0
+        void this.switchCamera()
+        return
+      }
+      this.lastTapAt = now
+      this.lastTapPos = p
+    }
     this.pointer = e.pointerType === 'touch' ? null : p
     this.el.root.setPointerCapture?.(e.pointerId)
     this.controller.pointerDown(e.pointerId, p, performance.now())
@@ -226,9 +248,15 @@ export class StageEngine {
     return this.view
   }
 
-  async startCamera(): Promise<void> {
-    const set = useStage.getState().set
-    set({ camera: 'requesting', cameraError: undefined })
+  async startCamera(facing?: CameraFacing): Promise<void> {
+    const state = useStage.getState()
+    const targetFacing = facing ?? state.facing
+    const set = state.set
+    set({
+      camera: 'requesting',
+      cameraError: undefined,
+      facing: targetFacing,
+    })
     try {
       stopStream(this.stream)
       this.stream = await openCamera(
@@ -237,6 +265,7 @@ export class StageEngine {
           if (!this.disposed) set({ camera: 'ended' })
         },
         useFx.getState().liteMode,
+        targetFacing,
       )
       if (this.disposed) return stopStream(this.stream)
       this.el.video.onresize = () => this.resize()
@@ -247,6 +276,17 @@ export class StageEngine {
       if (!this.disposed)
         set({ camera: 'error', cameraError: cameraErrorOf(e) })
     }
+  }
+
+  /** Switches between front (selfie) and rear camera on mobile devices. */
+  async switchCamera(): Promise<void> {
+    const cur = useStage.getState().facing
+    const next: CameraFacing = cur === 'user' ? 'environment' : 'user'
+    const autoMirror = next === 'user'
+    useStage.getState().set({ facing: next, mirror: autoMirror })
+    this.setMirror(autoMirror)
+    if (typeof navigator !== 'undefined') navigator.vibrate?.(12)
+    await this.startCamera(next)
   }
 
   /** Mouse/touch mode: no camera, no AI. */
@@ -346,6 +386,7 @@ export class StageEngine {
         now,
       )
       useFx.getState().set({ lastMeme: meme?.name ?? null })
+      if (typeof navigator !== 'undefined') navigator.vibrate?.(10)
       if (meme) this.logMeme(meme.id, meme.soundId, now)
       this.challenge?.onHit(f.score)
     }

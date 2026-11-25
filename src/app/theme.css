@@ -58,7 +58,9 @@ textarea:focus-visible,
   display: flex;
   flex-direction: column;
   min-height: 100svh;
-  padding: 0 clamp(10px, 1.6vw, 28px);
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) clamp(10px, 1.6vw, 28px)
+    env(safe-area-inset-bottom);
   background: var(--mb-bg);
   color: var(--mb-text);
   transition:
@@ -67,6 +69,7 @@ textarea:focus-visible,
 }
 .studio.is-live {
   height: 100svh;
+  height: 100dvh;
   overflow: hidden;
 }
 .mast,
@@ -841,6 +844,12 @@ dd {
   opacity: 0.35;
   cursor: default;
 }
+.drawer-backdrop {
+  display: none;
+}
+.sheet-handle {
+  display: none;
+}
 .drawer-panel {
   position: absolute;
   right: 76px;
@@ -1429,126 +1438,6 @@ dd {
   }
 }
 
-/* ---------- mobile ---------- */
-@media (max-width: 760px) {
-  .studio {
-    padding: 0 6px;
-  }
-  .mast {
-    min-height: 52px;
-    flex-wrap: wrap;
-  }
-  .brand span,
-  .info span,
-  .info kbd {
-    display: none;
-  }
-  .info {
-    padding: 8px;
-  }
-  .mast-center {
-    order: 3;
-    flex-basis: 100%;
-    padding-bottom: 6px;
-  }
-  .stage.home {
-    min-height: 520px;
-  }
-  .welcome {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-  .copy {
-    text-align: center;
-    padding: 0;
-  }
-  .copy h1 {
-    font-size: clamp(3.1rem, 11vw, 4.8rem);
-  }
-  .primary {
-    margin: 18px auto 0;
-  }
-  .hero-badges {
-    justify-content: center;
-  }
-  .hero-cta-row {
-    justify-content: center;
-  }
-  .bento-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .lite-chip span {
-    display: none;
-  }
-  .privacy-line {
-    justify-content: center;
-  }
-  .illustration {
-    width: min(71vw, 290px);
-    grid-row: 1;
-  }
-  footer {
-    padding: 12px 3px;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .quickbar {
-    top: 10px;
-    transform: none;
-    left: 8px;
-  }
-  .drawer-rail {
-    top: 10px;
-    transform: none;
-    right: 8px;
-  }
-  .rail-btn {
-    width: 36px;
-    height: 36px;
-  }
-  /* Drawer becomes a bottom sheet. */
-  .drawer-panel {
-    left: 0;
-    right: 0;
-    top: auto;
-    bottom: 0;
-    width: auto;
-    min-width: 0;
-    max-height: 55%;
-    border-radius: 18px 18px 0 0;
-    animation-name: sheet-in;
-  }
-  @keyframes sheet-in {
-    from {
-      transform: translateY(24px);
-      opacity: 0;
-    }
-  }
-  .dock {
-    bottom: 10px;
-    gap: 6px;
-  }
-  .dock-btn {
-    min-width: 72px;
-    padding: 6px 8px;
-  }
-  .pills {
-    bottom: 92px;
-    max-width: 94%;
-    overflow: hidden;
-  }
-  .coach-0,
-  .coach-1,
-  .coach-2 {
-    left: 50%;
-    right: auto;
-    top: auto;
-    bottom: 120px;
-    transform: translateX(-50%);
-  }
-}
-
 /* ---------- phase 5: capture ---------- */
 .dock-layout {
   display: grid;
@@ -1699,18 +1588,6 @@ dd {
   align-items: center;
   gap: 4px;
   margin: 0;
-}
-@media (max-width: 760px) {
-  .review-body {
-    flex-direction: column;
-  }
-  .review-clips {
-    width: auto;
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .dock-layout {
-    min-width: 70px;
-  }
 }
 
 /* ---------- phase 6: photo book, creator, reel ---------- */
@@ -2173,4 +2050,409 @@ dd {
 .share-settings {
   display: grid;
   gap: 8px;
+}
+
+/* ---------- unified tablet, touch & mobile responsive layer ---------- */
+@media (max-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .welcome {
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+  .mast-center {
+    gap: 6px;
+  }
+}
+
+@media (hover: none) {
+  .dock-btn kbd,
+  .info kbd {
+    display: none;
+  }
+  .info:hover,
+  .chip:hover,
+  .round:hover,
+  .ghost:hover,
+  .dock-btn:hover:not([aria-disabled]),
+  .pill-btn:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .studio {
+    padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom);
+  }
+  .studio.is-live {
+    padding: env(safe-area-inset-top) 0 0;
+  }
+  .mast {
+    min-height: 46px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    column-gap: 6px;
+  }
+  .brand img {
+    width: 30px;
+    height: 30px;
+  }
+  .brand span,
+  .info span,
+  .info kbd,
+  .dock-btn kbd {
+    display: none;
+  }
+  .info {
+    padding: 7px 9px;
+  }
+  /* Single-row horizontally swipeable control strip so mobile camera stays spacious. */
+  .mast-center {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding: 2px 0 4px;
+  }
+  .mast-center::-webkit-scrollbar,
+  .pills::-webkit-scrollbar,
+  .drawer-rail::-webkit-scrollbar {
+    display: none;
+  }
+  .mast-center > * {
+    flex-shrink: 0;
+  }
+  .mode-chip button {
+    padding: 5px 11px;
+    font-size: 0.78rem;
+  }
+  .chip {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+  .icon-chip {
+    padding: 7px 9px;
+  }
+  .lite-chip span {
+    display: none;
+  }
+  .stage.home {
+    min-height: 0;
+  }
+  .stage.live {
+    margin-bottom: 0;
+    border-radius: 18px 18px 0 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    box-shadow: none;
+  }
+  .frame {
+    margin: 8px;
+    padding: 16px 12px 18px;
+    gap: 16px;
+  }
+  .welcome {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 0;
+  }
+  .copy {
+    text-align: center;
+    padding: 0;
+  }
+  .copy h1 {
+    font-size: clamp(2.65rem, 11vw, 4.2rem);
+  }
+  .intro {
+    font-size: 0.86rem;
+    margin-bottom: 12px;
+  }
+  .primary {
+    margin: 14px auto 0;
+  }
+  .hero-badges {
+    justify-content: center;
+    margin-top: 14px;
+    gap: 6px;
+  }
+  .hero-badges li {
+    font-size: 0.74rem;
+    padding: 4px 10px;
+  }
+  .hero-cta-row {
+    justify-content: center;
+    margin-top: 16px;
+    gap: 12px;
+  }
+  .home-vibes {
+    padding: 6px 12px;
+    font-size: 0.76rem;
+  }
+  .bento-grid {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .bento-card {
+    padding: 10px;
+    gap: 8px;
+  }
+  .bento-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+  .bento-card h2 {
+    font-size: 0.82rem;
+  }
+  .bento-card p {
+    font-size: 0.72rem;
+  }
+  .privacy-line {
+    justify-content: center;
+    font-size: 0.8rem;
+    margin-top: 12px;
+  }
+  .hero-visual {
+    grid-row: 1;
+  }
+  .illustration {
+    width: min(54vw, 210px);
+  }
+  footer {
+    padding: 10px 4px;
+    align-items: center;
+    text-align: center;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .gesture-radar {
+    top: 8px;
+    max-width: calc(100% - 24px);
+    padding: 5px 11px;
+    font-size: 0.74rem;
+  }
+  .stage-note,
+  .stage-hint {
+    top: 8px;
+    max-width: 92%;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+  .quickbar {
+    top: 52px;
+    transform: none;
+    left: 8px;
+    padding: 4px;
+    gap: 4px;
+    background: color-mix(in srgb, var(--mb-surface) 84%, transparent);
+  }
+  .tool {
+    width: 34px;
+    height: 34px;
+  }
+  /* Compact scrollable right rail that never collides with radar or bottom dock. */
+  .drawer-rail {
+    top: 52px;
+    transform: none;
+    right: 8px;
+    max-height: calc(100% - 196px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px;
+    gap: 3px;
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--mb-surface) 84%, transparent);
+  }
+  .rail-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+  /* Native bottom sheet with tap-outside backdrop and drag handle. */
+  .drawer-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: rgba(15, 10, 24, 0.35);
+  }
+  .sheet-handle {
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--mb-line) 35%, transparent);
+    margin: 8px auto 0;
+    flex-shrink: 0;
+  }
+  .drawer-panel {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    z-index: 11;
+    width: auto;
+    min-width: 0;
+    max-height: 62dvh;
+    border-radius: 22px 22px 0 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.28);
+    animation-name: sheet-in;
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateY(28px);
+      opacity: 0;
+    }
+  }
+  /* Native mobile bottom studio dock: fits 360px+ cleanly with prominent shutter. */
+  .dock {
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    width: calc(100% - 16px);
+    max-width: 440px;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 5px;
+    padding: 6px;
+    border-radius: 22px;
+  }
+  .dock-layout {
+    min-width: 0;
+    flex: 1 1 0;
+    padding: 5px 6px;
+    border-radius: 14px;
+    text-align: center;
+  }
+  .dock-layout small {
+    font-size: 0.6rem;
+  }
+  .dock-layout b {
+    font-size: 0.74rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dock-timer {
+    min-width: 44px;
+    padding: 5px 6px;
+    border-radius: 14px;
+    font-size: 0.72rem;
+  }
+  .dock-btn {
+    min-width: 54px;
+    padding: 6px 8px;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    gap: 1px;
+  }
+  .dock-btn.shutter-btn {
+    min-width: 66px;
+    padding: 7px 12px;
+    font-size: 0.74rem;
+    box-shadow: 0 2px 0 var(--mb-line);
+  }
+  /* Swipeable single-row gesture pills carousel right above the dock. */
+  .pills {
+    left: 0;
+    right: 0;
+    transform: none;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding: 2px 10px;
+    gap: 6px;
+  }
+  .pill {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: 6px 11px;
+    font-size: 0.75rem;
+  }
+  .coach-0,
+  .coach-1,
+  .coach-2 {
+    left: 50%;
+    right: auto;
+    top: auto;
+    bottom: calc(126px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(330px, calc(100% - 24px));
+    padding: 13px 15px;
+  }
+  .toast {
+    bottom: calc(126px + env(safe-area-inset-bottom));
+    max-width: calc(100% - 24px);
+    font-size: 0.84rem;
+  }
+  dialog.debug {
+    margin: auto;
+    width: 94vw;
+    max-height: 82dvh;
+  }
+  .review {
+    padding: 8px;
+  }
+  .review-card {
+    padding: 12px 14px;
+    border-radius: 18px;
+    max-height: 94dvh;
+    overflow-y: auto;
+  }
+  .review-body {
+    flex-direction: column;
+  }
+  .review-clips {
+    width: auto;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .review-img {
+    max-height: 44dvh;
+  }
+  .review-card .card-actions {
+    gap: 6px;
+  }
+  .review-card .ghost,
+  .review-card .primary {
+    font-size: 0.82rem;
+    padding: 8px 12px;
+  }
+  .photobook {
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+  }
+  .book-toolbar {
+    gap: 6px;
+  }
+  .book-toolbar .ghost {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+  .challenge-hud {
+    width: min(340px, calc(100% - 24px));
+    top: 8px;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-vibes {
+    width: 100%;
+    justify-content: center;
+  }
 }

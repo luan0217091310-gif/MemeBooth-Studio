@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  SwitchCamera,
   Volume2,
   VolumeX,
   Zap,
@@ -59,6 +60,8 @@ const RING_ORDER: readonly RingLightMode[] = ['off', 'white', 'pink', 'warm']
 
 function QuickHeaderControls() {
   const mirror = useStage((s) => s.mirror)
+  const facing = useStage((s) => s.facing)
+  const camera = useStage((s) => s.camera)
   const setStage = useStage((s) => s.set)
   const muted = useFx((s) => s.muted)
   const ringLight = useFx((s) => s.ringLight)
@@ -70,6 +73,24 @@ function QuickHeaderControls() {
   }
   return (
     <>
+      {camera === 'live' && (
+        <button
+          className={
+            'chip icon-chip ' + (facing === 'environment' ? 'lit-on' : '')
+          }
+          aria-label={vi.fx.switchCamera}
+          aria-pressed={facing === 'environment'}
+          title={
+            vi.fx.switchCamera +
+            ' (' +
+            (facing === 'user' ? vi.fx.frontCamera : vi.fx.rearCamera) +
+            ')'
+          }
+          onClick={() => void getStageEngine()?.switchCamera()}
+        >
+          <SwitchCamera size={16} />
+        </button>
+      )}
       <button
         className={'chip icon-chip ' + (handShutter ? 'lit-on' : '')}
         aria-label={vi.fx.handShutter}

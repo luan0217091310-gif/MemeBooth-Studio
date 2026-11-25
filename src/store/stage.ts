@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { CameraError } from '@/core/camera'
+import type { CameraError, CameraFacing } from '@/core/camera'
 import type { VisionErrorCode } from '@/core/ai/protocol'
 
 export type CameraStatus =
@@ -50,6 +50,7 @@ interface StageState {
   progress: number
   slowLoad: boolean
   mirror: boolean
+  facing: CameraFacing
   perf: PerfInfo
   set(partial: Partial<Omit<StageState, 'set'>>): void
 }
@@ -74,6 +75,7 @@ export const useStage = create<StageState>((set) => ({
   progress: 0,
   slowLoad: false,
   mirror: true,
+  facing: 'user',
   perf: initialPerf,
   live: {
     derived: {},

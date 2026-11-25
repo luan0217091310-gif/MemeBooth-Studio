@@ -63,6 +63,11 @@ Tính năng **tự động vẽ bằng tay đã được gỡ bỏ** để trán
 - **✋ Chụp rảnh tay (`Hand`)**: Bật để **giữ chữ V ✌️ khoảng 1 giây** là máy tự đếm ngược và chụp bộ ảnh Photobooth!
 - **☀️ Đèn trợ sáng (`Ring Light`)**: Bật viền phát sáng quanh màn hình (*Tắt → Trắng Studio → Hồng phấn → Ấm hoàng hôn*) giúp sáng mặt khi chụp buổi tối (không bị dính viền vào ảnh xuất ra).
 - **↔️ Lật gương** & **🔊 Bật/Tắt tiếng**: Chuyển nhanh ngay trên thanh trên cùng.
+- **📱 Tối ưu riêng cho Điện thoại (iOS & Android)**:
+  - **Đổi Camera Trước / Sau (1 chạm)**: Bấm biểu tượng đổi camera trên thanh trên cùng (hoặc **chạm đúp 2 lần lên màn hình camera** giống TikTok/Instagram), tự động tắt lật gương khi dùng camera sau.
+  - **Thanh điều khiển & Thẻ cử chỉ vuốt ngang bằng 1 ngón tay**: Thiết kế full-màn hình `100dvh` + tự căn lề tai thỏ/thanh Home iPhone (`safe-area-inset`).
+  - **Bottom Sheet hiện đại**: Ngăn kéo công cụ trượt từ đáy lên, chạm vùng tối bên ngoài để đóng nhanh.
+  - **Phản hồi rung (Haptic)**: Rung nhẹ khi nổ meme, đổi camera và bấm chụp trên điện thoại hỗ trợ.
 
 ### D. Ngăn kéo tính năng bên phải
 1. **🎨 Vibe & Studio Beauty**:
